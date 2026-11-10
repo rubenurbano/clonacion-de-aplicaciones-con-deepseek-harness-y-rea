@@ -1,0 +1,2868 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Clonación de Aplicaciones con DeepSeek Harness y REA — Tutorial Interactivo V001</title>
+  <style>
+    :root {
+      --bg-main: #0a0e1a;
+      --bg-card: #0f172a;
+      --bg-card-alt: #131f38;
+      --blue-highlight: #1e3a5f;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-bright: #00d4ff;
+      --accent-purple: #818cf8;
+      --accent-emerald: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --border-color: #1e3a5f;
+      --nav-height: 58px;
+      --font-scale: 1;
+      --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+      --code-bg: #060913;
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f8fafc;
+      --blue-highlight: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent: #0284c7;
+      --accent-bright: #0369a1;
+      --accent-purple: #4f46e5;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --border-color: #cbd5e1;
+      --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+      --code-bg: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      font-size: calc(16px * var(--font-scale));
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.65;
+      overflow-x: hidden;
+      padding-top: calc(var(--nav-height) + 4px);
+      padding-bottom: 90px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* BARRA DE PROGRESO DE LECTURA */
+    #reading-progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-purple), var(--accent-emerald));
+      z-index: 100;
+      transition: width 0.15s ease-out;
+    }
+
+    /* BARRA DE NAVEGACIÓN SUPERIOR FIJA */
+    nav#top-nav {
+      position: fixed;
+      top: 4px;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      z-index: 40;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    nav#top-nav::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    nav#top-nav::-webkit-scrollbar-thumb {
+      background: var(--blue-highlight);
+      border-radius: 4px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 42px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+
+    .chip:hover, .chip:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+      outline: 2px solid transparent;
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.22));
+      border-color: var(--accent);
+      color: var(--accent-bright);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    #mb {
+      background-color: var(--blue-highlight);
+      color: #ffffff;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* PANEL LATERAL ÍNDICE (#dr) EXACTO SEGÚN ESPECIFICACIÓN */
+    #dr {
+      position: fixed;
+      top: 58px;
+      left: 0;
+      bottom: 0;
+      width: min(330px, 88vw);
+      background: #0f172a;
+      border-right: 1px solid #1e3a5f;
+      transform: translateX(-105%);
+      transition: .25s;
+      z-index: 25;
+      overflow: auto;
+      padding: 10px;
+      box-shadow: 8px 0 30px rgba(0, 0, 0, 0.65);
+    }
+
+    #dr.o {
+      transform: none;
+    }
+
+    #dr a {
+      display: block;
+      padding: 12px;
+      border-radius: 8px;
+      color: #e2e8f0;
+      cursor: pointer;
+      min-height: 44px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    #dr a:hover, #dr a:focus-visible {
+      background: #ffffff0d;
+      outline: 2px solid #00d4ff;
+    }
+
+    #dr a.on {
+      background: #00d4ff22;
+      color: #00d4ff;
+      font-weight: 700;
+      border-left: 3px solid #00d4ff;
+    }
+
+    /* BARRA DE HERRAMIENTAS INTERACTIVAS Y BUSCADOR */
+    .utility-bar {
+      max-width: 1120px;
+      margin: 12px auto 0;
+      padding: 0 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-wrapper {
+      flex: 1 1 240px;
+      display: flex;
+      gap: 6px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .search-input:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+
+    .tools-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      min-height: 42px;
+      min-width: 42px;
+      padding: 6px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover, .tool-btn:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* RESULTADOS DE BÚSQUEDA INTERNA */
+    #search-results-panel {
+      max-width: 1120px;
+      margin: 10px auto;
+      padding: 14px;
+      background-color: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      display: none;
+    }
+
+    #search-results-panel.visible {
+      display: block;
+    }
+
+    .search-hit-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .search-hit-item:hover {
+      background-color: rgba(56, 189, 248, 0.12);
+    }
+
+    /* CONTENEDOR PRINCIPAL Y SECCIONES SPA */
+    main.tutorial-container {
+      max-width: 1120px;
+      margin: 14px auto;
+      padding: 0 12px;
+    }
+
+    .tab-section {
+      display: none;
+      animation: fadeInSection 0.28s ease-out;
+    }
+
+    .tab-section.active {
+      display: block;
+    }
+
+    @keyframes fadeInSection {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* TIPOGRAFÍA Y TARJETAS */
+    h1 {
+      font-size: clamp(1.55rem, 4.5vw, 2.35rem);
+      line-height: 1.25;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .author-byline-inline {
+      color: var(--accent);
+      font-weight: 800;
+      display: inline-block;
+    }
+
+    h2 {
+      font-size: clamp(1.35rem, 3.8vw, 1.9rem);
+      color: var(--accent);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border-color);
+      font-weight: 800;
+    }
+
+    h3 {
+      font-size: clamp(1.12rem, 3vw, 1.38rem);
+      color: var(--text-primary);
+      margin: 18px 0 10px;
+      font-weight: 700;
+    }
+
+    h4 {
+      font-size: 1.05rem;
+      color: var(--accent-emerald);
+      margin: 12px 0 6px;
+      font-weight: 700;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .text-muted {
+      color: var(--text-secondary);
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-highlight {
+      border-left: 4px solid var(--accent);
+      background: linear-gradient(145deg, var(--bg-card), var(--bg-card-alt));
+    }
+
+    .card-warning {
+      border-left: 4px solid var(--accent-amber);
+    }
+
+    .card-success {
+      border-left: 4px solid var(--accent-emerald);
+    }
+
+    .card-danger {
+      border-left: 4px solid var(--accent-rose);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* BADGES Y ETIQUETAS PEDAGÓGICAS */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .badge-blue { background: rgba(56, 189, 248, 0.18); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-emerald { background: rgba(52, 211, 153, 0.18); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); }
+    .badge-amber { background: rgba(251, 191, 36, 0.18); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+    .badge-purple { background: rgba(129, 140, 248, 0.18); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+    .badge-rose { background: rgba(251, 113, 133, 0.18); color: var(--accent-rose); border: 1px solid var(--accent-rose); }
+
+    /* CONTENEDOR SVG HERO Y CRÉDITOS (4:5 VERTICAL ADAPTATIVO) */
+    .svg-hero-wrapper {
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 4 / 5;
+      margin: 0 auto 18px;
+      background: radial-gradient(circle at 50% 35%, #162647 0%, #090d18 85%);
+      border: 2px solid var(--border-color);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 12px 35px rgba(0, 212, 255, 0.18);
+    }
+
+    .svg-hero-mount {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .svg-hero-mount svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .svg-controls-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    /* ANIMACIONES CSS PARA EL SVG MULTICAPA */
+    @keyframes svgOrbitSlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes svgOrbitReverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    @keyframes svgScanLaser {
+      0%, 100% { transform: translateY(0px); opacity: 0.85; }
+      50% { transform: translateY(155px); opacity: 1; }
+    }
+
+    @keyframes svgPulseCore {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    @keyframes svgFloatCard {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes svgFlowDash {
+      to { stroke-dashoffset: -48; }
+    }
+
+    .svg-anim-orbit-cw {
+      transform-origin: 200px 250px;
+      animation: svgOrbitSlow 22s linear infinite;
+    }
+
+    .svg-anim-orbit-ccw {
+      transform-origin: 200px 250px;
+      animation: svgOrbitReverse 16s linear infinite;
+    }
+
+    .svg-anim-laser {
+      animation: svgScanLaser 4.2s ease-in-out infinite;
+    }
+
+    .svg-anim-core {
+      transform-origin: 200px 250px;
+      animation: svgPulseCore 2.8s ease-in-out infinite;
+    }
+
+    .svg-anim-float-top {
+      animation: svgFloatCard 3.6s ease-in-out infinite;
+    }
+
+    .svg-anim-float-bottom {
+      animation: svgFloatCard 4.1s ease-in-out infinite reverse;
+    }
+
+    .svg-anim-stream {
+      stroke-dasharray: 8 6;
+      animation: svgFlowDash 1.6s linear infinite;
+    }
+
+    .svg-paused * {
+      animation-play-state: paused !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .svg-anim-orbit-cw,
+      .svg-anim-orbit-ccw,
+      .svg-anim-laser,
+      .svg-anim-core,
+      .svg-anim-float-top,
+      .svg-anim-float-bottom,
+      .svg-anim-stream {
+        animation: none !important;
+      }
+    }
+
+    /* BLOQUES COPIABLES Y PROMPTS */
+    .copy-block {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin: 12px 0 16px;
+      overflow: hidden;
+    }
+
+    .copy-block-header {
+      background-color: rgba(30, 58, 95, 0.55);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .copy-block-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .copy-btn {
+      min-height: 36px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background-color: rgba(56, 189, 248, 0.15);
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background-color: var(--accent);
+      color: #0a0e1a;
+    }
+
+    .copy-btn.copied {
+      border-color: var(--accent-emerald);
+      background-color: rgba(52, 211, 153, 0.25);
+      color: var(--accent-emerald);
+    }
+
+    pre.copy-content {
+      padding: 14px;
+      color: #f8fafc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+
+    /* ENLACES URL CON BOTÓN OBLIGATORIO "Abrir enlace en nueva ventana" */
+    .url-resource-card {
+      background-color: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .url-code-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      word-break: break-all;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px dashed var(--border-color);
+    }
+
+    .url-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .open-new-window-btn {
+      min-height: 42px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .open-new-window-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    }
+
+    /* PASOS PEDAGÓGICOS NUMERADOS */
+    .step-box {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background-color: var(--bg-card-alt);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .step-meta-item {
+      background: rgba(15, 23, 42, 0.55);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent-purple);
+    }
+
+    /* TABLAS RESPONSIVE */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      margin: 14px 0;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 540px;
+      background-color: var(--bg-card);
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--blue-highlight);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    tr:hover td {
+      background-color: rgba(56, 189, 248, 0.06);
+    }
+
+    /* TARJETAS DESPLEGABLES (DETAILS / SUMMARY) */
+    details.qa-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    details.qa-card summary {
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-primary);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 48px;
+    }
+
+    details.qa-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.qa-card summary::after {
+      content: "＋";
+      color: var(--accent);
+      font-size: 1.2rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    details.qa-card[open] summary {
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(56, 189, 248, 0.08);
+      color: var(--accent);
+    }
+
+    details.qa-card[open] summary::after {
+      content: "－";
+    }
+
+    .qa-body {
+      padding: 14px 16px;
+      color: var(--text-primary);
+      background-color: var(--bg-card-alt);
+    }
+
+    /* CHECKLIST INTERACTIVA */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background-color: var(--bg-card-alt);
+      cursor: pointer;
+      min-height: 46px;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      accent-color: var(--accent-emerald);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checklist-item.completed span {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    /* SIMULADOR INTERACTIVO EN PESTAÑA PRÁCTICA */
+    .sim-box {
+      background: var(--bg-card-alt);
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .sim-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .sim-metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .sim-metric-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    /* NAVEGACIÓN FIJA AL FINAL DE CADA PESTAÑA (ANTERIOR / SIGUIENTE) */
+    .tab-footer-nav {
+      margin-top: 26px;
+      padding: 14px;
+      background-color: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: sticky;
+      bottom: 10px;
+      z-index: 20;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.55);
+    }
+
+    .nav-step-btn {
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background-color: var(--blue-highlight);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      flex: 1 1 140px;
+      justify-content: center;
+    }
+
+    .nav-step-btn:hover {
+      background-color: var(--accent);
+      color: #0a0e1a;
+    }
+
+    /* BOTONES FLOTANTES ARRASTRABLES (MOVIBLES EN MÓVIL Y ESCRITORIO) */
+    .draggable-fab {
+      position: fixed;
+      z-index: 55;
+      min-height: 46px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--accent-bright);
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.82rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .draggable-fab:active {
+      cursor: grabbing;
+      border-color: var(--accent-emerald);
+    }
+
+    #fab-home {
+      right: 12px;
+      bottom: 138px;
+    }
+
+    #fab-top {
+      right: 12px;
+      bottom: 82px;
+    }
+
+    /* CRÉDITOS DESTACADOS */
+    .credits-author-hero {
+      font-size: clamp(1.9rem, 6vw, 3rem);
+      font-weight: 900;
+      color: var(--accent-bright);
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin: 14px 0 4px;
+      text-shadow: 0 0 22px rgba(0, 212, 255, 0.35);
+    }
+
+    .credits-role-sub {
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      margin-bottom: 16px;
+    }
+
+    /* OPTIMIZACIÓN ESPECÍFICA SAMSUNG GALAXY A02s (360px x 800px) */
+    @media (max-width: 400px) {
+      main.tutorial-container {
+        padding: 0 8px;
+      }
+      .card {
+        padding: 14px 12px;
+      }
+      .chip {
+        padding: 6px 11px;
+        font-size: 0.82rem;
+      }
+      .nav-step-btn {
+        font-size: 0.82rem;
+        padding: 8px 10px;
+      }
+      .draggable-fab {
+        padding: 7px 11px;
+        font-size: 0.76rem;
+      }
+    }
+
+    /* HOJA DE ESTILOS DE IMPRESIÓN Y PDF A4 */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm 12mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        font-size: 11pt !important;
+      }
+
+      nav#top-nav,
+      #dr,
+      .utility-bar,
+      #search-results-panel,
+      .draggable-fab,
+      .tab-footer-nav,
+      .svg-controls-bar,
+      #print-fallback-banner {
+        display: none !important;
+      }
+
+      .tab-section {
+        display: block !important;
+        opacity: 1 !important;
+        transform: none !important;
+        margin-bottom: 18px !important;
+        page-break-inside: auto;
+      }
+
+      .card, .step-box, details.qa-card, .copy-block, .url-resource-card {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #475569 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+
+      h1, h2, h3, h4, p, td, th, li, summary, .qa-body {
+        color: #000000 !important;
+      }
+
+      pre.copy-content {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border: 1px solid #94a3b8 !important;
+        white-space: pre-wrap !important;
+      }
+
+      .svg-hero-wrapper {
+        max-width: 250px !important;
+        background: #0f172a !important;
+        border: 1px solid #000000 !important;
+        margin: 10px auto !important;
+      }
+
+      table {
+        min-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE PROGRESO SUPERIOR -->
+  <div id="reading-progress-bar" aria-hidden="true"></div>
+
+  <!-- FUENTE SVG OCULTA ÚNICA (SE EXTRAE Y ELIMINA DEL DOM AL INICIAR) -->
+  <div id="svg-master-template-holder" style="display:none;" aria-hidden="true">
+    <svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Escena tecnológica animada de Ingeniería Inversa con REA y DeepSeek Harness analizando Actual Budget y sintetizando una aplicación index.html autónoma">
+      <defs>
+        <linearGradient id="__PREFIX__bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#070b16"/>
+          <stop offset="50%" stop-color="#0f172a"/>
+          <stop offset="100%" stop-color="#172554"/>
+        </linearGradient>
+        <linearGradient id="__PREFIX__cyanBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#00d4ff" stop-opacity="0"/>
+          <stop offset="50%" stop-color="#00d4ff" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="__PREFIX__coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00d4ff"/>
+          <stop offset="55%" stop-color="#6366f1"/>
+          <stop offset="100%" stop-color="#10b981"/>
+        </linearGradient>
+        <radialGradient id="__PREFIX__haloGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45"/>
+          <stop offset="70%" stop-color="#6366f1" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="__PREFIX__glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+
+      <!-- CAPA 1: FONDO Y REJILLA CIBERNÉTICA -->
+      <rect width="400" height="500" fill="url(#__PREFIX__bgGrad)"/>
+      <g stroke="#1e3a5f" stroke-width="0.7" opacity="0.45">
+        <line x1="0" y1="60" x2="400" y2="60"/>
+        <line x1="0" y1="120" x2="400" y2="120"/>
+        <line x1="0" y1="180" x2="400" y2="180"/>
+        <line x1="0" y1="240" x2="400" y2="240"/>
+        <line x1="0" y1="300" x2="400" y2="300"/>
+        <line x1="0" y1="360" x2="400" y2="360"/>
+        <line x1="0" y1="420" x2="400" y2="420"/>
+        <line x1="60" y1="0" x2="60" y2="500"/>
+        <line x1="130" y1="0" x2="130" y2="500"/>
+        <line x1="200" y1="0" x2="200" y2="500"/>
+        <line x1="270" y1="0" x2="270" y2="500"/>
+        <line x1="340" y1="0" x2="340" y2="500"/>
+      </g>
+
+      <!-- HALO DE ENERGÍA CENTRAL -->
+      <circle cx="200" cy="250" r="135" fill="url(#__PREFIX__haloGrad)"/>
+
+      <!-- CAPA 2: APP DE ORIGEN (ACTUAL BUDGET EN PUERTO LOCAL) -->
+      <g class="svg-anim-float-top">
+        <rect x="42" y="24" width="316" height="110" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+        <rect x="42" y="24" width="316" height="24" rx="12" fill="#1e3a5f"/>
+        <circle cx="58" cy="36" r="4.5" fill="#fb7185"/>
+        <circle cx="72" cy="36" r="4.5" fill="#fbbf24"/>
+        <circle cx="86" cy="36" r="4.5" fill="#34d399"/>
+        <text x="104" y="40" fill="#e2e8f0" font-family="monospace" font-size="10" font-weight="bold">ORIGEN: Actual Budget (localhost)</text>
+
+        <!-- Sobres presupuestarios y fórmulas reactivas -->
+        <rect x="56" y="58" width="90" height="62" rx="6" fill="#131f38" stroke="#64748b" stroke-width="1"/>
+        <text x="64" y="74" fill="#94a3b8" font-family="sans-serif" font-size="8.5">SOBRES / SQL</text>
+        <rect x="64" y="82" width="68" height="7" rx="3" fill="#38bdf8"/>
+        <rect x="64" y="95" width="52" height="7" rx="3" fill="#818cf8"/>
+        <rect x="64" y="108" width="60" height="6" rx="3" fill="#34d399"/>
+
+        <rect x="156" y="58" width="188" height="62" rx="6" fill="#090d18" stroke="#00d4ff" stroke-width="1.2"/>
+        <text x="166" y="75" fill="#00d4ff" font-family="monospace" font-size="9" font-weight="bold">ƒx Motor Hoja Reactiva</text>
+        <text x="166" y="92" fill="#e2e8f0" font-family="monospace" font-size="8.5">toBudget = ingresos - asignado</text>
+        <text x="166" y="108" fill="#34d399" font-family="monospace" font-size="8.5">SELECT * FROM v_transactions</text>
+      </g>
+
+      <!-- FLUJOS DE EXTRACCIÓN DE DATOS DESDE EL ORIGEN -->
+      <path d="M 110 134 C 110 175, 165 190, 185 220" fill="none" stroke="#00d4ff" stroke-width="2.2" class="svg-anim-stream"/>
+      <path d="M 200 134 L 200 210" fill="none" stroke="#818cf8" stroke-width="2.5" class="svg-anim-stream"/>
+      <path d="M 290 134 C 290 175, 235 190, 215 220" fill="none" stroke="#34d399" stroke-width="2.2" class="svg-anim-stream"/>
+
+      <!-- LÁSER DE ESCANEO DE INGENIERÍA INVERSA REA -->
+      <g class="svg-anim-laser">
+        <rect x="34" y="30" width="332" height="4" fill="url(#__PREFIX__cyanBeam)" filter="url(#__PREFIX__glowFilter)"/>
+      </g>
+
+      <!-- CAPA 3: NÚCLEO CENTRAL REA + DEEPSEEK HARNESS + OPENROUTER -->
+      <g class="svg-anim-orbit-cw">
+        <circle cx="200" cy="250" r="78" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="14 8 4 8"/>
+        <circle cx="200" cy="172" r="5" fill="#00d4ff"/>
+        <circle cx="200" cy="328" r="5" fill="#34d399"/>
+      </g>
+
+      <g class="svg-anim-orbit-ccw">
+        <circle cx="200" cy="250" r="62" fill="none" stroke="#818cf8" stroke-width="1.8" stroke-dasharray="10 10"/>
+        <polygon points="262,250 254,245 254,255" fill="#fbbf24"/>
+        <polygon points="138,250 146,245 146,255" fill="#fb7185"/>
+      </g>
+
+      <!-- HEXÁGONO CENTRAL DEL AGENTE REA -->
+      <g class="svg-anim-core">
+        <polygon points="200,202 242,226 242,274 200,298 158,274 158,226" fill="url(#__PREFIX__coreGrad)" stroke="#ffffff" stroke-width="2" filter="url(#__PREFIX__glowFilter)"/>
+        <text x="200" y="244" text-anchor="middle" fill="#0a0e1a" font-family="sans-serif" font-size="14" font-weight="900">REA + IA</text>
+        <text x="200" y="261" text-anchor="middle" fill="#0a0e1a" font-family="monospace" font-size="8.5" font-weight="bold">DS HARNESS</text>
+        <text x="200" y="274" text-anchor="middle" fill="#0f172a" font-family="monospace" font-size="7.5" font-weight="bold">NEMOTRON / OPUS</text>
+      </g>
+
+      <!-- NODOS LATERALES DE PROCESAMIENTO -->
+      <rect x="16" y="228" width="96" height="44" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1.4"/>
+      <text x="64" y="246" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="8.5" font-weight="bold">DESCOMPILAR</text>
+      <text x="64" y="260" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="8">JS + Vistas SQL</text>
+
+      <rect x="288" y="228" width="96" height="44" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="1.4"/>
+      <text x="336" y="246" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="8.5" font-weight="bold">4 PASOS</text>
+      <text x="336" y="260" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="8">HTML•CSS•JS•Test</text>
+
+      <!-- FLUJOS DE SÍNTESIS HACIA LA NUEVA APLICACIÓN CLONADA -->
+      <path d="M 185 285 C 165 320, 110 335, 110 366" fill="none" stroke="#34d399" stroke-width="2.2" class="svg-anim-stream"/>
+      <path d="M 200 298 L 200 366" fill="none" stroke="#00d4ff" stroke-width="2.5" class="svg-anim-stream"/>
+      <path d="M 215 285 C 235 320, 290 335, 290 366" fill="none" stroke="#fbbf24" stroke-width="2.2" class="svg-anim-stream"/>
+
+      <!-- CAPA 4: APP CLONADA AUTÓNOMA (MISCUENTAS IA - INDEX.HTML) -->
+      <g class="svg-anim-float-bottom">
+        <rect x="34" y="366" width="332" height="114" rx="12" fill="#0f172a" stroke="#34d399" stroke-width="2.2"/>
+        <rect x="34" y="366" width="332" height="24" rx="12" fill="#064e3b"/>
+        <text x="50" y="382" fill="#ecfdf5" font-family="monospace" font-size="10" font-weight="bold">CLON: MisCuentas IA — index.html único</text>
+        <rect x="292" y="370" width="64" height="16" rx="8" fill="#34d399"/>
+        <text x="324" y="381" text-anchor="middle" fill="#064e3b" font-family="sans-serif" font-size="8.5" font-weight="900">CSV OK</text>
+
+        <!-- Paneles de la nueva aplicación financiera clonada -->
+        <rect x="48" y="398" width="96" height="70" rx="6" fill="#131f38" stroke="#34d399" stroke-width="1"/>
+        <text x="56" y="413" fill="#94a3b8" font-family="sans-serif" font-size="8">INGRESOS MES</text>
+        <text x="56" y="429" fill="#34d399" font-family="monospace" font-size="11" font-weight="bold">+2.850,00 €</text>
+        <text x="56" y="445" fill="#94a3b8" font-family="sans-serif" font-size="8">GASTOS CSV</text>
+        <text x="56" y="460" fill="#fb7185" font-family="monospace" font-size="10" font-weight="bold">-1.120,40 €</text>
+
+        <rect x="154" y="398" width="198" height="70" rx="6" fill="#090d18" stroke="#38bdf8" stroke-width="1"/>
+        <text x="164" y="414" fill="#38bdf8" font-family="sans-serif" font-size="8.5" font-weight="bold">SOBRES Y MOVIMIENTOS BANCARIOS</text>
+        <rect x="164" y="422" width="145" height="8" rx="4" fill="#1e3a5f"/>
+        <rect x="164" y="422" width="112" height="8" rx="4" fill="#34d399"/>
+        <rect x="164" y="436" width="145" height="8" rx="4" fill="#1e3a5f"/>
+        <rect x="164" y="436" width="84" height="8" rx="4" fill="#38bdf8"/>
+        <text x="164" y="459" fill="#fbbf24" font-family="monospace" font-size="8.5">Por asignar: +1.729,60 € (Local)</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR CON BOTÓN ÍNDICE Y PESTAÑAS -->
+  <nav id="top-nav" aria-label="Navegación principal del tutorial">
+    <button class="chip" id="mb" aria-label="Abrir índice" aria-expanded="false">☰ Índice</button>
+    <button class="chip active" data-tab-btn="0">INICIO</button>
+    <button class="chip" data-tab-btn="1">CONCEPTOS</button>
+    <button class="chip" data-tab-btn="2">PROCEDIMIENTO</button>
+    <button class="chip" data-tab-btn="3">PROMPTS</button>
+    <button class="chip" data-tab-btn="4">PRÁCTICA</button>
+    <button class="chip" data-tab-btn="5">33 Preguntas (Q&amp;A)</button>
+    <button class="chip" data-tab-btn="6">ERRORES</button>
+    <button class="chip" data-tab-btn="7">RESUMEN</button>
+    <button class="chip" data-tab-btn="8">FUENTES</button>
+    <button class="chip" data-tab-btn="9">CRÉDITOS</button>
+  </nav>
+
+  <!-- PANEL LATERAL DEL ÍNDICE (#dr) -->
+  <div id="dr" role="navigation" aria-label="Índice completo de secciones"></div>
+
+  <!-- BARRA DE HERRAMIENTAS INTERACTIVAS -->
+  <div class="utility-bar" role="region" aria-label="Herramientas de lectura y búsqueda">
+    <div class="search-wrapper">
+      <input type="search" id="global-search-input" class="search-input" placeholder="🔍 Buscar en todo el tutorial (ej. REA, CSV, Nemotron, Opus)..." aria-label="Buscar contenido en el tutorial">
+      <button type="button" id="clear-search-btn" class="tool-btn" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">✕</button>
+    </div>
+    <div class="tools-group">
+      <button type="button" id="font-dec-btn" class="tool-btn" title="Reducir tamaño de letra" aria-label="Reducir tamaño de letra">A−</button>
+      <button type="button" id="font-inc-btn" class="tool-btn" title="Aumentar tamaño de letra" aria-label="Aumentar tamaño de letra">A+</button>
+      <button type="button" id="theme-toggle-btn" class="tool-btn" title="Cambiar entre tema oscuro y claro" aria-label="Cambiar tema visual">🌓 Tema</button>
+      <button type="button" id="print-pdf-btn" class="tool-btn" title="Imprimir o guardar como PDF" aria-label="Imprimir o guardar en PDF">🖨️ PDF</button>
+    </div>
+  </div>
+
+  <!-- AVISO ALTERNATIVO DE IMPRESIÓN SI EL VISOR LO BLOQUEA -->
+  <div id="print-fallback-banner" class="card card-warning" style="display:none; max-width:1120px; margin:10px auto;">
+    <p><strong>Aviso de impresión:</strong> Abre este archivo directamente en el navegador y utiliza <code>Ctrl+P</code> o <code>Cmd+P</code>.</p>
+  </div>
+
+  <!-- PANEL DE RESULTADOS DEL BUSCADOR -->
+  <div id="search-results-panel" role="region" aria-live="polite">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <strong id="search-results-count" style="color:var(--accent);">Resultados encontrados</strong>
+      <button type="button" id="close-search-panel-btn" class="tool-btn">Cerrar</button>
+    </div>
+    <div id="search-results-list"></div>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL DIVIDIDO EN PESTAÑAS SPA -->
+  <main class="tutorial-container">
+
+    <!-- ==========================================
+         PESTAÑA 0: INICIO (HOME)
+         ========================================== -->
+    <section class="tab-section active" id="tab-0" data-t="INICIO">
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Guía Maestra Paso a Paso</span>
+        <span class="badge badge-emerald">Sin Conocimientos Previos</span>
+        <span class="badge badge-purple">Optimizado Samsung Galaxy A02s</span>
+
+        <!-- TÍTULO CON "by Rubén Sbarsky" EXCLUSIVO EN LA PESTAÑA DE INICIO -->
+        <h1>Clonación de Aplicaciones con DeepSeek Harness y REA <span class="author-byline-inline">by Rubén Sbarsky</span></h1>
+
+        <p class="text-muted">Aprende desde cero cómo inspeccionar una aplicación en ejecución sin tener su código fuente original, extraer sus fórmulas matemáticas ocultas mediante el agente de ingeniería inversa <strong>REA</strong> y reconstruir tu propia aplicación financiera autónoma en un único archivo <code>index.html</code>.</p>
+
+        <div style="margin: 14px 0;">
+          <button type="button" class="chip" id="ix" style="background:var(--blue-highlight); color:#fff; border-color:var(--accent);">☰ Ver índice</button>
+        </div>
+
+        <!-- SVG ANIMADO COMPARTIDO (INSTANCIA 1: INICIO) -->
+        <div class="svg-hero-wrapper" role="region" aria-label="Ilustración animada principal de Ingeniería Inversa con REA y DeepSeek Harness">
+          <div id="svg-mount-home" class="svg-hero-mount" aria-label="Ilustración vectorial animada que muestra cómo REA escanea Actual Budget en ejecución y genera el clon autónomo MisCuentas IA en un archivo index.html"></div>
+        </div>
+
+        <div class="svg-controls-bar">
+          <button type="button" class="tool-btn svg-toggle-anim-btn" data-target="svg-mount-home">⏸️ Pausar / Reanudar animación SVG</button>
+        </div>
+      </div>
+
+      <!-- SECUENCIA PEDAGÓGICA INICIAL: QUÉ ES, PARA QUÉ SIRVE, POR QUÉ IMPORTA -->
+      <div class="grid-2">
+        <div class="card">
+          <h3>1. ¿Qué es la clonación de aplicaciones con IA?</h3>
+          <p>Es el proceso de observar y analizar cómo funciona por dentro un programa informático que ya está en marcha (su aspecto visual, sus botones, sus tablas y sus fórmulas de cálculo) para que un modelo de Inteligencia Artificial escriba desde cero una aplicación nueva, propia e independiente, <strong>sin necesidad de poseer el código fuente original</strong> del creador.</p>
+        </div>
+        <div class="card">
+          <h3>2. ¿Para qué sirve y por qué importa?</h3>
+          <p>Permite a cualquier persona —incluso sin saber programar— estudiar herramientas complejas como <strong>Actual Budget</strong> (un gestor de finanzas personales por sobres) y crear una versión simplificada, rápida, personalizada con su propio nombre y colores, capaz de leer los extractos bancarios en formato <code>CSV</code> directamente en su ordenador sin depender de servidores externos.</p>
+        </div>
+      </div>
+
+      <div class="card card-success">
+        <h3>3. Mapa de Aprendizaje del Tutorial</h3>
+        <p>Este tutorial interactivo está estructurado para guiarte paso a paso:</p>
+        <ul style="padding-left:20px; margin-top:8px;">
+          <li><strong>CONCEPTOS:</strong> Entenderás qué hacen <em>DeepSeek Harness</em>, el agente <em>REA</em>, <em>OpenRouter</em> y la diferencia real entre modelos gratuitos (Nvidia Nemotron) y modelos de pago (Claude Code con Opus 5 / 5.5).</li>
+          <li><strong>PROCEDIMIENTO:</strong> Seguirás el método exacto y la estrategia de <strong>4 pasos modulares</strong> para evitar que los modelos gratuitos se bloqueen o fallen.</li>
+          <li><strong>PROMPTS:</strong> Tendrás recopilados todos los prompts exactos listos para copiar con un solo toque y la explicación de dónde se emplea cada uno.</li>
+          <li><strong>PRÁCTICA:</strong> Desarrollarás el proyecto integrador <em>"MisCuentas IA"</em>, probarás un simulador en vivo de presupuestos por sobres y verificarás tu avance con listas de comprobación persistentes.</li>
+          <li><strong>33 Preguntas (Q&amp;A):</strong> Dominarás la materia con 33 preguntas y respuestas divididas en Nivel 1 (Básico), Nivel 2 (Avanzado) y Nivel 3 (PRO).</li>
+          <li><strong>ERRORES:</strong> Aprenderás a resolver al instante fallos como el <em>"Turno fallido"</em> de OpenRouter, bucles de instalación o problemas con archivos CSV bancarios.</li>
+        </ul>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 1: CONCEPTOS
+         ========================================== -->
+    <section class="tab-section" id="tab-1" data-t="CONCEPTOS">
+      <h2>Módulo 0 y 1: Fundamentos de Ingeniería Inversa con IA y Entornos de Trabajo</h2>
+
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Explicación para Principiantes</span>
+        <h3>¿Cómo funciona la magia detrás de DeepSeek Harness y REA?</h3>
+        <p>Imagina que pruebas un plato delicioso en un restaurante (la aplicación original en ejecución). No tienes la receta escrita del chef (el repositorio de código fuente). Sin embargo, cuentas con un laboratorio químico inteligente (<strong>REA</strong>) que analiza los ingredientes exactos del plato ya servido, y con un cocinero robot (el modelo de IA dentro de <strong>DeepSeek Harness</strong>) que cocina para ti una versión casera adaptada a tus gustos en un único recipiente fácil de usar (el archivo <code>index.html</code>).</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>DeepSeek Harness (DS Harness)</h4>
+          <p>Es el entorno de desarrollo estructurado (el "arnés" o panel de control) que conecta los modelos de lenguaje (LLMs) con agentes especializados. Permite usar claves de conexión (API Keys) para ordenar a la IA que explore aplicaciones web y programe de forma autónoma.</p>
+        </div>
+        <div class="card">
+          <h4>REA (Reverse Engineering Agent)</h4>
+          <p>Significa <em>Agente de Ingeniería Inversa</em>. Está integrado dentro del entorno y su misión es entrar en la dirección web o puerto local donde corre una aplicación activa, examinar el código JavaScript compilado en memoria, descubrir cómo se calculan los datos y extraer las vistas SQL y reglas de negocio.</p>
+        </div>
+        <div class="card">
+          <h4>Actual Budget (Caso de Estudio)</h4>
+          <p>Es una reconocida aplicación de código abierto para gestionar finanzas personales mediante el método de <strong>presupuesto por sobres</strong> (<em>Envelope Budgeting</em>). En este tutorial la usamos como aplicación de origen instalada localmente para que REA descubra cómo calcula el <em>"dinero pendiente de asignar"</em>.</p>
+        </div>
+        <div class="card">
+          <h4>OpenRouter y Claves API (API Keys)</h4>
+          <p><strong>OpenRouter</strong> es una pasarela unificada en internet que te da una sola llave (<em>API Key</em>) para conectarte a decenas de modelos de inteligencia artificial, incluyendo modelos totalmente gratuitos de empresas como Nvidia.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Arquitectura Conceptual de las 3 Fases</h3>
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <strong>Fase de Inspección Visual y en Memoria (Agente REA)</strong>
+          </div>
+          <p>REA se conecta al puerto local de la aplicación en marcha, navega por su código JavaScript reactivo, detecta su motor interno de hoja de cálculo con celdas dinámicas e identifica las vistas SQL de ingresos, gastos y categorías.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <strong>Fase de Abstracción de Reglas de Negocio</strong>
+          </div>
+          <p>Traduce las fórmulas técnicas descubiertas (por ejemplo, la ecuación exacta que resta lo presupuestado en sobres del saldo disponible) a una especificación clara que el modelo de lenguaje puede utilizar.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <strong>Fase de Reconstrucción Sintética Autónoma</strong>
+          </div>
+          <p>El modelo de IA escribe código nuevo y limpio (HTML5 semántico, CSS3 moderno y JavaScript ES6) empaquetado en un solo archivo <code>index.html</code> que funciona localmente en tu navegador sin necesidad de servidores complejos.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Comparativa Técnica (Benchmark): Modelos Gratuitos vs. Modelos de Pago</h3>
+        <p>En el material fuente se somete a prueba el mismo reto con dos configuraciones distintas: la vía gratuita mediante <strong>OpenRouter (Nvidia Nemotron)</strong> y la vía profesional de pago con <strong>Claude Code (Anthropic Opus 5 / 5.5)</strong>, además de mencionar alternativas intermedias como la gama <strong>DeepSeek</strong> y <strong>GLM 5.2 / 5.3</strong>.</p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Criterio Evaluado</th>
+                <th>Solución Gratuita (DS Harness + Nvidia Nemotron Free)</th>
+                <th>Solución de Pago (Claude Code + Anthropic Opus 5 / 5.5)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Modelos Utilizados</strong></td>
+                <td><code>nvidia/nemotron-3-ultra-free</code> y <code>nvidia/nemotron-lighting-free</code></td>
+                <td>Anthropic <code>Opus 5 / 5.5</code> (alternativas: gama DeepSeek y GLM 5.2/5.3)</td>
+              </tr>
+              <tr>
+                <td><strong>Coste Económico</strong></td>
+                <td>0,00 $ (100 % Gratuito a través de OpenRouter)</td>
+                <td>Elevado (Requiere pago por consumo de API o suscripción)</td>
+              </tr>
+              <tr>
+                <td><strong>Estabilidad de Conexión</strong></td>
+                <td>Baja en horas punta (sufre saturación y avisos de <em>"Turno fallido"</em>)</td>
+                <td>Muy alta (ejecución continua, rápida y sin cortes de sesión)</td>
+              </tr>
+              <tr>
+                <td><strong>Calidad de Interfaz (UI)</strong></td>
+                <td>Básica, limpia, funcional y directa</td>
+                <td>Altamente pulida, moderna y con acabado visual superior</td>
+              </tr>
+              <tr>
+                <td><strong>Procesamiento CSV Bancario</strong></td>
+                <td>Lectura estándar de ingresos/gastos sin categorización compleja</td>
+                <td>Parseo avanzado con asignación de categorías e informes visuales</td>
+              </tr>
+              <tr>
+                <td><strong>Ingeniería Inversa con REA</strong></td>
+                <td>Excelente: extrae con precisión las fórmulas y vistas SQL</td>
+                <td>Excelente: análisis exhaustivo en una sola iteración</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 2: PROCEDIMIENTO
+         ========================================== -->
+    <section class="tab-section" id="tab-2" data-t="PROCEDIMIENTO">
+      <h2>Módulos 2, 3, 4 y 6: Procedimiento Completo Paso a Paso</h2>
+      <p>Sigue este procedimiento estructurado con rigor pedagógico. Cada paso contiene una única acción principal, el motivo por el cual se realiza, el resultado que debes observar en tu pantalla y cómo actuar ante cualquier imprevisto.</p>
+
+      <!-- PROCEDIMIENTO PARTE A: PREPARACIÓN Y CONEXIÓN -->
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Fase A</span>
+        <h3>Preparación del Entorno y Configuración de OpenRouter en DeepSeek Harness</h3>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <strong>Tener en ejecución local la aplicación de origen (Actual Budget)</strong>
+          </div>
+          <p>Despliega o inicia <strong>Actual Budget</strong> en tu ordenador para que esté activo en una dirección accesible por tu navegador (por ejemplo, <code>http://localhost:3000</code> o la IP local correspondiente).</p>
+          <div class="step-meta-grid">
+            <div class="step-meta-item"><strong>Por qué se hace:</strong> El agente REA necesita inspeccionar una aplicación viva en ejecución para analizar su código JavaScript en memoria.</div>
+            <div class="step-meta-item"><strong>Resultado esperado:</strong> Al abrir la dirección local en tu navegador, ves la pantalla de Actual Budget funcionando.</div>
+            <div class="step-meta-item"><strong>Solución si falla:</strong> Verifica que el servidor local de la aplicación esté encendido y que ningún cortafuegos bloquee el puerto.</div>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <strong>Crear una cuenta y generar una API Key en OpenRouter</strong>
+          </div>
+          <p>Entra en el portal de <strong>OpenRouter</strong>, inicia sesión, dirígete a la sección <strong>Keys</strong> y pulsa para crear una nueva clave API (<em>API Key</em>). Cópiala en tu portapapeles.</p>
+          <div class="step-meta-grid">
+            <div class="step-meta-item"><strong>Por qué se hace:</strong> Necesitas una llave de autenticación para que DeepSeek Harness pueda comunicarse gratuitamente con los modelos de Nvidia alojados en la nube.</div>
+            <div class="step-meta-item"><strong>Resultado esperado:</strong> Obtienes una cadena de texto secreta que comienza por <code>sk-or-...</code>.</div>
+            <div class="step-meta-item"><strong>Solución si falla:</strong> Si no ves la clave completa de nuevo, genera una nueva clave en el panel <em>Keys</em> y guárdala en un lugar seguro.</div>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <strong>Vincular la API Key y elegir el modelo gratuito en DeepSeek Harness</strong>
+          </div>
+          <p>Abre <strong>DeepSeek Harness</strong>, entra en los ajustes de proveedor de API, pega tu clave de OpenRouter y selecciona el modelo gratuito <code>nvidia/nemotron-3-ultra-free</code>. Ajusta el nivel de esfuerzo de razonamiento (<em>Reasoning Effort</em>) en <strong>Medium</strong>.</p>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Identificador del modelo principal gratuito</span>
+              <button type="button" class="copy-btn" data-copy-target="model-id-1">📋 COPIAR</button>
+            </div>
+            <pre class="copy-content" id="model-id-1">nvidia/nemotron-3-ultra-free</pre>
+          </div>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Modelo ligero de respaldo (si hay saturación)</span>
+              <button type="button" class="copy-btn" data-copy-target="model-id-2">📋 COPIAR</button>
+            </div>
+            <pre class="copy-content" id="model-id-2">nvidia/nemotron-lighting-free</pre>
+          </div>
+          <div class="step-meta-grid">
+            <div class="step-meta-item"><strong>Por qué se hace:</strong> El nivel de esfuerzo <em>Medium</em> equilibra una alta capacidad analítica sin agotar prematuramente el tiempo de espera de la API gratuita.</div>
+            <div class="step-meta-item"><strong>Resultado esperado:</strong> El chat de DeepSeek Harness queda activo y conectado al modelo de Nvidia sin coste alguno.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROCEDIMIENTO PARTE B: INSPECCIÓN CON REA -->
+      <div class="card">
+        <span class="badge badge-purple">Fase B</span>
+        <h3>Inspección e Ingeniería Inversa con el Agente REA</h3>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">4</span>
+            <strong>Enviar el Prompt de análisis e ingeniería inversa a REA</strong>
+          </div>
+          <p>En la caja de conversación de DeepSeek Harness, envía la instrucción ordenando usar REA sobre la dirección donde corre Actual Budget para descubrir cómo calcula el dinero pendiente de asignar.</p>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Prompt 1 — Ingeniería Inversa con REA</span>
+              <button type="button" class="copy-btn" data-copy-target="proc-prompt-1">📋 COPIAR PROMPT</button>
+            </div>
+            <pre class="copy-content" id="proc-prompt-1">Usa REA para estudiar la aplicación de Actual Budget que tengo instalada en esta dirección y quiero saber cómo calcular el dinero pendiente de asignar.</pre>
+          </div>
+          <div class="step-meta-grid">
+            <div class="step-meta-item"><strong>Por qué se hace:</strong> Antes de clonar una aplicación, el agente debe extraer su lógica interna real en vez de adivinarla.</div>
+            <div class="step-meta-item"><strong>Resultado esperado:</strong> REA inspecciona el JavaScript compilado y te devuelve un informe técnico revelando que Actual Budget utiliza un <strong>motor reactivo de hoja de cálculo</strong> con celdas dinámicas, las fórmulas exactas en JavaScript para el saldo pendiente de asignar y las <strong>vistas SQL</strong> asociadas a ingresos, gastos y categorías.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROCEDIMIENTO PARTE C: RECONSTRUCCIÓN Y ESTRATEGIA DE 4 PASOS -->
+      <div class="card card-success">
+        <span class="badge badge-emerald">Fase C</span>
+        <h3>Clonación, Simplificación a <code>index.html</code> y Ejecución Modular en 4 Pasos</h3>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">5</span>
+            <strong>Solicitar la creación de la aplicación clonada personalizada</strong>
+          </div>
+          <p>Una vez que REA ha extraído las fórmulas, pídele que construya tu aplicación con cuentas, movimientos, categorías, presupuestos por sobres, importación de CSV bancario, tu nombre y tus colores.</p>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Prompt 2 — Especificaciones de la App Clonada</span>
+              <button type="button" class="copy-btn" data-copy-target="proc-prompt-2">📋 COPIAR PROMPT</button>
+            </div>
+            <pre class="copy-content" id="proc-prompt-2">Tiene que tener cuentas, movimientos, categorías, presupuestos por sobres, importar CSV de mi banco (para tener todos los movimientos por separado), usa mi nombre y colores, que funcione en local y cuando termines dime cómo abrirla y pruébala antes de decirme que está lista.</pre>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">6</span>
+            <strong>Frenar instalaciones pesadas y restringir a un solo archivo <code>index.html</code></strong>
+          </div>
+          <p>Si observas que el agente empieza a querer instalar paquetes complejos o entornos pesados en tu sistema operativo, detén la ejecución y envíale la orden de simplificación inmediata.</p>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Prompt 3 — Parada y Simplificación a index.html</span>
+              <button type="button" class="copy-btn" data-copy-target="proc-prompt-3">📋 COPIAR PROMPT</button>
+            </div>
+            <pre class="copy-content" id="proc-prompt-3">Para y hazlo más simple, una sola carpeta con un index.html.</pre>
+          </div>
+          <div class="step-meta-grid">
+            <div class="step-meta-item"><strong>Por qué se hace (Seguridad y Eficiencia):</strong> Evita que el agente instale software no deseado en tu máquina y reduce drásticamente el consumo de tokens.</div>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-header">
+            <span class="step-number">7</span>
+            <strong>Aplicar la Estrategia Maestra de 4 Pasos para no saturar modelos gratuitos</strong>
+          </div>
+          <p>Para evitar el fallo de <em>"Turno fallido"</em> en OpenRouter, ordénale construir el archivo <code>index.html</code> paso a paso sin instalar nada.</p>
+          <div class="copy-block">
+            <div class="copy-block-header">
+              <span class="copy-block-title">Prompt 4 — Ejecución Modular Paso a Paso</span>
+              <button type="button" class="copy-btn" data-copy-target="proc-prompt-4">📋 COPIAR PROMPT</button>
+            </div>
+            <pre class="copy-content" id="proc-prompt-4">Hazlo sin instalar nada en un index.html y además hazlo por partes (paso a paso) para no saturar el modelo.</pre>
+          </div>
+
+          <h4>Desglose de las 4 Partes que ejecutará el modelo:</h4>
+          <ol style="padding-left:20px; margin-top:8px;">
+            <li><strong>Paso 1 — Estructura Base (HTML5 semántico):</strong> Crea el esqueleto del documento <code>index.html</code> con barra lateral, resumen financiero, tabla de movimientos, sección de sobres y selector de archivos CSV.</li>
+            <li><strong>Paso 2 — Diseño Visual (CSS3 integrado):</strong> Añade la etiqueta <code>&lt;style&gt;</code> con tus colores personalizados, diseño adaptable y tipografía limpia.</li>
+            <li><strong>Paso 3 — Lógica de Negocio y Parseo CSV (JavaScript ES6):</strong> Programa la lectura de archivos <code>.csv</code> del banco, separa ingresos (positivos) y gastos (negativos), aplica la fórmula de sobres y filtra por fechas o meses.</li>
+            <li><strong>Paso 4 — Verificación y Pruebas en Local:</strong> El agente comprueba que el archivo abre sin errores y valida que los cálculos funcionen antes de entregártelo.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 3: PROMPTS (REPOSITORIO COMPLETO)
+         ========================================== -->
+    <section class="tab-section" id="tab-3" data-t="PROMPTS">
+      <h2>Módulo 11: Repositorio Completo de Prompts Documentados</h2>
+      <p>En esta pestaña tienes reunidos <strong>todos los prompts</strong> del tutorial (incluso aquellos que ya aparecen explicados en otras secciones), junto con una descripción clara de <strong>dónde y cuándo se emplea cada uno</strong>. Pulsa el botón <strong>COPIAR</strong> para llevártelos íntegramente al portapapeles.</p>
+
+      <!-- PROMPT 1 -->
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Prompt #1</span>
+        <span class="badge badge-purple">Fase de Inspección</span>
+        <h3>1. Prompt de Análisis de Código e Ingeniería Inversa con REA</h3>
+        <p><strong>Dónde se emplea:</strong> Se introduce en el chat de <strong>DeepSeek Harness</strong> al comienzo del proyecto, justo después de haber conectado la API Key de OpenRouter (con el modelo <code>nvidia/nemotron-3-ultra-free</code> en esfuerzo <em>Medium</em>) y teniendo la aplicación original <strong>Actual Budget</strong> ejecutándose en una dirección o puerto local.</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Prompt 1 — Inspección con Agente REA</span>
+            <button type="button" class="copy-btn" data-copy-target="repo-prompt-1">📋 COPIAR PROMPT</button>
+          </div>
+          <pre class="copy-content" id="repo-prompt-1">Usa REA para estudiar la aplicación de Actual Budget que tengo instalada en esta dirección y quiero saber cómo calcular el dinero pendiente de asignar.</pre>
+        </div>
+      </div>
+
+      <!-- PROMPT 2 -->
+      <div class="card">
+        <span class="badge badge-emerald">Prompt #2</span>
+        <span class="badge badge-blue">Fase de Construcción Inicial</span>
+        <h3>2. Prompt de Generación y Personalización de Software</h3>
+        <p><strong>Dónde se emplea:</strong> Se utiliza en <strong>DeepSeek Harness</strong> inmediatamente después de que REA haya devuelto el informe técnico con las fórmulas del motor reactivo de hoja de cálculo y las vistas SQL. Sirve para ordenar la creación de la nueva aplicación clonada con todos sus módulos funcionales, lectura de CSV bancario y personalización visual.</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Prompt 2 — Especificaciones Funcionales y Marca Propia</span>
+            <button type="button" class="copy-btn" data-copy-target="repo-prompt-2">📋 COPIAR PROMPT</button>
+          </div>
+          <pre class="copy-content" id="repo-prompt-2">Tiene que tener cuentas, movimientos, categorías, presupuestos por sobres, importar CSV de mi banco (para tener todos los movimientos por separado), usa mi nombre y colores, que funcione en local y cuando termines dime cómo abrirla y pruébala antes de decirme que está lista.</pre>
+        </div>
+      </div>
+
+      <!-- PROMPT 3 -->
+      <div class="card card-warning">
+        <span class="badge badge-amber">Prompt #3</span>
+        <span class="badge badge-rose">Intervención de Seguridad y Simplicidad</span>
+        <h3>3. Prompt de Restricción de Entorno y Simplificación a Archivo Único</h3>
+        <p><strong>Dónde se emplea:</strong> Se emplea en el chat de <strong>DeepSeek Harness</strong> tras detener manualmente al agente cuando este intenta instalar dependencias pesadas, librerías externas o paquetes complejos en el sistema operativo local. Fuerza una arquitectura limpia en una sola carpeta con un único <code>index.html</code>.</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Prompt 3 — Simplificación a una carpeta con index.html</span>
+            <button type="button" class="copy-btn" data-copy-target="repo-prompt-3">📋 COPIAR PROMPT</button>
+          </div>
+          <pre class="copy-content" id="repo-prompt-3">Para y hazlo más simple, una sola carpeta con un index.html.</pre>
+        </div>
+      </div>
+
+      <!-- PROMPT 4 -->
+      <div class="card card-success">
+        <span class="badge badge-emerald">Prompt #4</span>
+        <span class="badge badge-purple">Optimización para Modelos Gratuitos</span>
+        <h3>4. Prompt de Ejecución Modular por Partes (Anti-Saturación)</h3>
+        <p><strong>Dónde se emplea:</strong> Se emplea en <strong>DeepSeek Harness</strong> cuando se trabaja con modelos gratuitos de OpenRouter (como <code>Nemotron 3 Ultra Free</code> o <code>Nemotron Lighting Free</code>) para evitar el corte por tiempo de espera (<em>timeout</em>) o el error de <em>"Turno fallido"</em>, obligando al modelo a dividir el desarrollo del <code>index.html</code> en 4 pasos manejables (HTML, CSS, JS y Pruebas).</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Prompt 4 — Desarrollo Paso a Paso sin Instalaciones</span>
+            <button type="button" class="copy-btn" data-copy-target="repo-prompt-4">📋 COPIAR PROMPT</button>
+          </div>
+          <pre class="copy-content" id="repo-prompt-4">Hazlo sin instalar nada en un index.html y además hazlo por partes (paso a paso) para no saturar el modelo.</pre>
+        </div>
+      </div>
+
+      <!-- PROMPT 5 -->
+      <div class="card">
+        <span class="badge badge-purple">Prompt #5</span>
+        <span class="badge badge-blue">Benchmark Comparativo de Pago</span>
+        <h3>5. Prompt de Benchmark y Refinamiento en Claude Code (Modelo Anthropic Opus 5 / 5.5)</h3>
+        <p><strong>Dónde se emplea:</strong> Se utiliza dentro de la herramienta de línea de comandos <strong>Claude Code</strong> conectada al modelo de pago <strong>Anthropic Opus 5 / 5.5</strong> durante la prueba comparativa (Módulo 5), para indicarle que omita comprobaciones innecesarias de archivos previos y pase directamente a generar la aplicación financiera completa con cuentas, movimientos y categorías.</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Prompt 5 — Instrucción en Claude Code (Opus 5 / 5.5)</span>
+            <button type="button" class="copy-btn" data-copy-target="repo-prompt-5">📋 COPIAR PROMPT</button>
+          </div>
+          <pre class="copy-content" id="repo-prompt-5">No compruebes este archivito que me estabas diciendo y tiene que tener cuentas, movimientos, categorías...</pre>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 4: PRÁCTICA
+         ========================================== -->
+    <section class="tab-section" id="tab-4" data-t="PRÁCTICA">
+      <h2>Módulo 8: Proyecto Integrador Práctico — "MisCuentas IA"</h2>
+      <p>Pon en práctica todo lo aprendido construyendo y probando el proyecto <strong>"MisCuentas IA — Clon Autónomo de Gestión Financiera"</strong>. Aquí tienes un archivo <code>movimientos.csv</code> de prueba listo para copiar, un simulador interactivo funcional del motor de sobres extraído por REA y tu lista de comprobación con guardado automático.</p>
+
+      <!-- ARCHIVO CSV BANCARIO DE PRUEBA PARA COPIAR -->
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Datos de Prueba Reales</span>
+        <h3>1. Extracto Bancario de Ejemplo (<code>movimientos.csv</code>)</h3>
+        <p>Copia este contenido y guárdalo en un archivo llamado <code>movimientos.csv</code> en tu dispositivo para importarlo dentro de la aplicación clonada que genere tu agente IA:</p>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span class="copy-block-title">Archivo movimientos.csv (Formato compatible coma / punto y coma)</span>
+            <button type="button" class="copy-btn" data-copy-target="csv-sample-block">📋 COPIAR CSV</button>
+          </div>
+          <pre class="copy-content" id="csv-sample-block">Fecha,Concepto,Importe,Categoria
+2026-11-01,Nomina Mensual Empresa,2850.00,Ingresos
+2026-11-02,Alquiler Vivienda,-750.00,Vivienda
+2026-11-03,Supermercado Central,-185.40,Alimentacion
+2026-11-04,Recibo Fibra e Internet,-45.00,Servicios
+2026-11-05,Abono Proyecto Freelance,420.00,Ingresos
+2026-11-06,Transporte y Combustible,-140.00,Transporte</pre>
+        </div>
+      </div>
+
+      <!-- SIMULADOR INTERACTIVO EN VIVO DEL MOTOR DE ACTUAL BUDGET EXTRAÍDO POR REA -->
+      <div class="sim-box" role="region" aria-label="Simulador interactivo de MisCuentas IA">
+        <span class="badge badge-emerald">Laboratorio Interactivo en Vivo</span>
+        <h3>2. Simulador del Motor Reactivo Extraído por REA ("MisCuentas IA")</h3>
+        <p>Experimenta aquí mismo cómo funciona la fórmula matemática que REA descubre en <em>Actual Budget</em>: $$\text{Dinero Pendiente de Asignar} = \text{Ingresos Totales} - \sum \text{Asignado en Sobres}$$ y cómo el Saldo Real se calcula sumando ingresos y restando gastos del CSV:</p>
+
+        <div class="grid-2" style="margin-top:12px;">
+          <div>
+            <label for="sim-income-input" style="font-weight:700; display:block; margin-bottom:4px;">Ingresos Totales del Mes (€):</label>
+            <input type="number" id="sim-income-input" class="search-input" value="3270" step="50">
+          </div>
+          <div>
+            <label for="sim-env-housing" style="font-weight:700; display:block; margin-bottom:4px;">Sobre Vivienda Asignado (€):</label>
+            <input type="number" id="sim-env-housing" class="search-input" value="750" step="25">
+          </div>
+          <div>
+            <label for="sim-env-food" style="font-weight:700; display:block; margin-bottom:4px;">Sobre Alimentación Asignado (€):</label>
+            <input type="number" id="sim-env-food" class="search-input" value="400" step="25">
+          </div>
+          <div>
+            <label for="sim-env-savings" style="font-weight:700; display:block; margin-bottom:4px;">Sobre Ahorro y Servicios (€):</label>
+            <input type="number" id="sim-env-savings" class="search-input" value="600" step="25">
+          </div>
+        </div>
+
+        <div class="sim-metrics">
+          <div class="sim-metric-card">
+            <span class="text-muted" style="font-size:0.8rem;">Ingresos CSV</span>
+            <div id="sim-out-income" class="sim-metric-value" style="color:var(--accent-emerald);">3.270,00 €</div>
+          </div>
+          <div class="sim-metric-card">
+            <span class="text-muted" style="font-size:0.8rem;">Total en Sobres</span>
+            <div id="sim-out-assigned" class="sim-metric-value" style="color:var(--accent);">1.750,00 €</div>
+          </div>
+          <div class="sim-metric-card">
+            <span class="text-muted" style="font-size:0.8rem;">Pendiente de Asignar</span>
+            <div id="sim-out-tobudget" class="sim-metric-value" style="color:var(--accent-amber);">1.520,00 €</div>
+          </div>
+        </div>
+        <p id="sim-status-msg" style="font-size:0.9rem; font-weight:700; text-align:center; margin-bottom:0;"></p>
+      </div>
+
+      <!-- EJERCICIO PRÁCTICO CON SOLUCIÓN EXPLICADA -->
+      <div class="card">
+        <h3>3. Ejercicio Práctico Guiado (Con Solución Explicada)</h3>
+        <p><strong>Enunciado del reto:</strong> Supón que estás usando el modelo gratuito <code>nvidia/nemotron-3-ultra-free</code> en DeepSeek Harness. Le pides que genere tu clon de <em>Actual Budget</em>, pero a mitad de camino el agente intenta ejecutar comandos complejos de terminal y luego aparece el mensaje de error <strong>"Turno fallido"</strong>. ¿Cuáles son las dos acciones exactas que debes realizar para completar el proyecto sin pagar nada?</p>
+        <details class="qa-card">
+          <summary>👁️ Ver solución explicada paso a paso</summary>
+          <div class="qa-body">
+            <ol style="padding-left:20px;">
+              <li><strong>Frenar y simplificar la arquitectura:</strong> Detén el intento de instalación de paquetes y envíale el Prompt 4: <em>"Hazlo sin instalar nada en un index.html y además hazlo por partes (paso a paso) para no saturar el modelo."</em></li>
+              <li><strong>Cambiar al modelo ligero si persiste la saturación:</strong> Si el servidor de <code>nemotron-3-ultra-free</code> sigue saturado en OpenRouter, abre una nueva sesión y selecciona <code>nvidia/nemotron-lighting-free</code> para completar las 4 partes (HTML, CSS, JS y verificación).</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+
+      <!-- LISTA DE COMPROBACIÓN INTERACTIVA CON PERSISTENCIA LOCALSTORAGE -->
+      <div class="card card-success">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <h3 style="margin:0;">4. Lista de Comprobación del Proyecto (Progreso Guardado)</h3>
+          <button type="button" id="reset-checklist-btn" class="tool-btn">🔄 Reiniciar lista</button>
+        </div>
+        <p class="text-muted">Marca cada paso a medida que lo completes. Tu avance se conserva automáticamente en tu navegador.</p>
+
+        <div id="interactive-checklist">
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-1"> <span>1. Desplegar Actual Budget en local y verificar que responde en el navegador.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-2"> <span>2. Obtener API Key gratuita en OpenRouter y vincularla en DeepSeek Harness.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-3"> <span>3. Configurar modelo Nvidia Nemotron Free con nivel de esfuerzo (Reasoning Effort) en Medium.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-4"> <span>4. Ejecutar el Prompt 1 con el agente REA para extraer la fórmula del dinero pendiente de asignar.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-5"> <span>5. Solicitar la creación de "MisCuentas IA" restringida a un único archivo <code>index.html</code> en 4 pasos.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk-6"> <span>6. Abrir el archivo <code>index.html</code> generado con doble clic e importar el archivo <code>movimientos.csv</code>.</span></label>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 5: 33 Preguntas (Q&A) — ANTES DE ERRORES
+         ========================================== -->
+    <section class="tab-section" id="tab-5" data-t="33 Preguntas (Q&A)">
+      <h2>Módulo 10: Banco Completo de 33 Preguntas y Respuestas (Q&amp;A)</h2>
+      <p>Explora las <strong>33 preguntas y respuestas oficiales</strong> ordenadas por nivel de dificultad: <strong>Nivel 1 (Básico)</strong>, <strong>Nivel 2 (Avanzado)</strong> y <strong>Nivel 3 (PRO)</strong>. Puedes abrir o cerrar todas las respuestas con un solo toque.</p>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+        <button type="button" id="qa-expand-all-btn" class="tool-btn">➕ Desplegar las 33 respuestas</button>
+        <button type="button" id="qa-collapse-all-btn" class="tool-btn">➖ Plegar las 33 respuestas</button>
+      </div>
+
+      <!-- NIVEL 1: BÁSICO (1 A 11) -->
+      <div class="card card-highlight">
+        <span class="badge badge-emerald">Nivel 1 — Básico (Preguntas 1 a 11)</span>
+        <h3>Fundamentos para Principiantes</h3>
+
+        <details class="qa-card">
+          <summary>1. ¿Qué es la clonación de aplicaciones mediante IA?</summary>
+          <div class="qa-body"><p>Es el proceso de crear una nueva aplicación informática que replica las funciones y diseño de un software existente sin necesidad de tener su código fuente original.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>2. ¿Qué significa que una aplicación sea "funcional"?</summary>
+          <div class="qa-body"><p>Significa que la aplicación no solo tiene una interfaz visual, sino que sus botones, formularios, cálculos e importaciones de datos funcionan correctamente.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>3. ¿Necesito saber programar para seguir este tutorial?</summary>
+          <div class="qa-body"><p>No, el proceso utiliza agentes de IA que generan el código de forma autónoma a partir de instrucciones en lenguaje natural (prompts).</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>4. ¿Qué es DeepSeek Harness?</summary>
+          <div class="qa-body"><p>Es una herramienta de software que permite conectar modelos de inteligencia artificial para realizar tareas automáticas de desarrollo e inspección de código.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>5. ¿Qué es REA?</summary>
+          <div class="qa-body"><p>Es un agente (<em>Reverse Engineering Agent</em>) especializado en examinar aplicaciones en funcionamiento para averiguar cómo están construidas por dentro.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>6. ¿Qué es OpenRouter?</summary>
+          <div class="qa-body"><p>Es un servicio en línea que proporciona acceso a una amplia variedad de modelos de IA, tanto gratuitos como de pago, mediante una única clave de API.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>7. ¿Por qué se utiliza una aplicación en local (index.html)?</summary>
+          <div class="qa-body"><p>Porque permite ejecutar la aplicación directamente en cualquier navegador web de forma rápida, ligera y sin necesidad de instalar programas adicionales.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>8. ¿Qué es un archivo CSV?</summary>
+          <div class="qa-body"><p>Es un formato de archivo de texto plano utilizado para almacenar datos en forma de tabla, común en las descargas de extractos bancarios.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>9. ¿Qué ocurre si un modelo gratuito de IA falla durante el proceso?</summary>
+          <div class="qa-body"><p>Puede deberse a la saturación del servidor; se soluciona cambiando de modelo o dividiendo la tarea en pasos más pequeños.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>10. ¿Es legal realizar ingeniería inversa en aplicaciones?</summary>
+          <div class="qa-body"><p>Analizar cómo funciona una aplicación para aprender o crear una herramienta propia sin copiar directamente código registrado es una práctica habitual en desarrollo, siempre que respete los términos de uso.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>11. ¿Cómo se abre la aplicación creada en mi ordenador?</summary>
+          <div class="qa-body"><p>Simplemente haciendo doble clic sobre el archivo <code>index.html</code> generado para que se abra en el navegador web.</p></div>
+        </details>
+      </div>
+
+      <!-- NIVEL 2: AVANZADO (12 A 22) -->
+      <div class="card">
+        <span class="badge badge-blue">Nivel 2 — Avanzado (Preguntas 12 a 22)</span>
+        <h3>Arquitectura, Modelos y Procesamiento de Datos</h3>
+
+        <details class="qa-card">
+          <summary>12. ¿Cómo analiza REA el cálculo de "dinero pendiente de asignar" en Actual Budget?</summary>
+          <div class="qa-body"><p>Inspecciona el código JavaScript en ejecución y descubre un motor reactivo de hoja de cálculo que define celdas dinámicas interconectadas.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>13. ¿Cuál es la diferencia entre Nemotron 3 Ultra Free y Nemotron Lighting Free?</summary>
+          <div class="qa-body"><p>Nemotron 3 Ultra ofrece mayor capacidad de razonamiento pero sufre mayor saturación, mientras que Lighting Free es más rápido y estable para tareas estructuradas.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>14. ¿Por qué se desaconseja dejar que el agente instale herramientas complejas durante el proceso con modelos gratuitos?</summary>
+          <div class="qa-body"><p>Porque aumenta la complejidad del entorno, consume más tokens, alarga el tiempo de ejecución y genera propensión a errores de instalación.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>15. ¿Qué función cumple el parámetro "Reasoning Effort" o "Esfuerzo"?</summary>
+          <div class="qa-body"><p>Ajusta la cantidad de tiempo y cómputo que el modelo dedica a analizar la lógica antes de emitir una respuesta.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>16. ¿Cómo procesa la aplicación clonada los datos del archivo CSV bancario?</summary>
+          <div class="qa-body"><p>Mediante un script en JavaScript que lee el texto del archivo, separa los valores por columnas, clasifica las cifras en ingresos o gastos y actualiza la pantalla.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>17. ¿Qué ventaja ofrece dividir la generación del código en 4 partes?</summary>
+          <div class="qa-body"><p>Evita superar el límite de tiempo de respuesta de las API gratuitas y previene respuestas truncadas o incompletas.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>18. ¿Se pueden guardar los datos de la aplicación si cerramos el navegador?</summary>
+          <div class="qa-body"><p>Si se implementa almacenamiento local (<em>LocalStorage</em> en JavaScript), los datos importados permanecen guardados en el navegador del usuario.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>19. ¿Por qué un modelo como Anthropic Opus produce mejores resultados que uno gratuito?</summary>
+          <div class="qa-body"><p>Posee una ventana de contexto más amplia, mayor precisión lógica y un entrenamiento superior en diseño de interfaces y desarrollo de software.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>20. ¿Qué es una vista SQL en el contexto del análisis de REA?</summary>
+          <div class="qa-body"><p>Es una consulta estructurada a la base de datos de la aplicación que organiza la información de transacciones y presupuestos para mostrarla en la pantalla.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>21. ¿Qué ocurre si el archivo CSV contiene un delimitador diferente como punto y coma?</summary>
+          <div class="qa-body"><p>La lógica de parseo en JavaScript debe ajustarse para identificar automáticamente si los campos están separados por comas o por puntos y comas.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>22. ¿Es posible personalizar los colores y el nombre de la aplicación clonada?</summary>
+          <div class="qa-body"><p>Sí, basta con especificar los colores deseados y el nuevo nombre en el prompt de generación de la interfaz.</p></div>
+        </details>
+      </div>
+
+      <!-- NIVEL 3: PRO (23 A 33) -->
+      <div class="card card-warning">
+        <span class="badge badge-purple">Nivel 3 — PRO (Preguntas 23 a 33)</span>
+        <h3>Ingeniería de Software, Escalabilidad y Producción</h3>
+
+        <details class="qa-card">
+          <summary>23. ¿En qué consiste el principio de reactividad en el motor de hoja de cálculo detectado por REA?</summary>
+          <div class="qa-body"><p>Consiste en que el cambio de valor en una celda o movimiento financiero actualiza automáticamente todas las dependencias y totales vinculados en tiempo real.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>24. ¿Cómo mitigar los fallos por saturación de context-window en modelos gratuitos de OpenRouter?</summary>
+          <div class="qa-body"><p>Solicitando entregables modulares, manteniendo historiales de chat limpios y restringiendo las respuestas a archivos de código únicos.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>25. ¿Qué diferencia existe entre clonar una interfaz y descompilar la lógica de negocio subyacente?</summary>
+          <div class="qa-body"><p>Clonar la interfaz solo copia el aspecto visual; descompilar la lógica de negocio implica extraer y replicar las reglas matemáticas y de datos que hacen que la app funcione.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>26. ¿Cómo influye la arquitectura de Claude Code en la calidad de la generación frente a DS Harness?</summary>
+          <div class="qa-body"><p>Claude Code integra ejecución directa en terminal con agentes de verificación en bucle cerrado, optimizando la refactorización automática.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>27. ¿Qué limita a un modelo gratuito a la hora de estructurar aplicaciones de múltiples archivos?</summary>
+          <div class="qa-body"><p>La tasa de transferencia de tokens por segundo y el tiempo máximo de espera antes de que la pasarela API corte la conexión por <em>timeout</em>.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>28. ¿Se puede conectar la aplicación clonada a una base de datos externa como PostgreSQL o SQLite?</summary>
+          <div class="qa-body"><p>Sí, reemplazando las funciones de almacenamiento local por peticiones <code>fetch</code> o <code>axios</code> a un servidor backend con API REST o GraphQL.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>29. ¿Qué es la categorización automática de movimientos bancarios y cómo se implementa?</summary>
+          <div class="qa-body"><p>Es la capacidad de asignar etiquetas (ej. "Supermercado" &rarr; "Alimentación") mediante reglas de búsqueda de patrones de texto en el concepto del movimiento.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>30. ¿Cómo gestionar la discrepancia de nombres de columnas en archivos CSV de distintos bancos?</summary>
+          <div class="qa-body"><p>Creando una capa de mapeo de cabeceras en JavaScript que reconozca términos equivalentes (ej. "Fecha", "Date", "F.Operación").</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>31. ¿Qué papel juegan los modelos intermedios como DeepSeek Coder o GLM 5.2/5.3 en este flujo?</summary>
+          <div class="qa-body"><p>Ofrecen un equilibrio idóneo de alto rendimiento en programación a un coste significativamente inferior al de los modelos insignia de gama alta.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>32. ¿Cómo verificar la desinfección e higiene de datos de entrada?</summary>
+          <div class="qa-body"><p>Asegurando que cualquier dato insertado desde el CSV o formularios pase por funciones de sanitización antes de renderizarse en el DOM.</p></div>
+        </details>
+
+        <details class="qa-card">
+          <summary>33. ¿Cuál es la metodología recomendada para pasar de un prototipo index.html a un producto de producción?</summary>
+          <div class="qa-body"><p>Modularizar el código en componentes (React/Vue), implementar un backend seguro, añadir autenticación de usuarios y migrar a una base de datos persistente.</p></div>
+        </details>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 6: ERRORES (TROUBLESHOOTING)
+         ========================================== -->
+    <section class="tab-section" id="tab-6" data-t="ERRORES">
+      <h2>Módulo 7: Guía de Resolución de Problemas (Troubleshooting)</h2>
+      <p>Cuando trabajas con agentes de ingeniería inversa y modelos gratuitos en la nube, es habitual toparse con obstáculos específicos. Aquí tienes el diagnóstico exacto y la solución verificada para cada uno de los 5 problemas documentados.</p>
+
+      <div class="card card-danger">
+        <span class="badge badge-rose">Problema Crítico #1</span>
+        <h3>1. Fallo de conexión o saturación en OpenRouter ("Turno fallido")</h3>
+        <p><strong>Síntoma:</strong> El agente se detiene a mitad de una respuesta y muestra un mensaje de error de API o <em>"Turno fallido"</em>.</p>
+        <p><strong>Causa raíz:</strong> El modelo gratuito <code>nvidia/nemotron-3-ultra-free</code> sufre picos de tráfico mundial en OpenRouter o la respuesta solicitada es demasiado larga y supera el tiempo límite (<em>timeout</em>).</p>
+        <p><strong>Solución paso a paso:</strong></p>
+        <ol style="padding-left:20px;">
+          <li>Cierra la sesión de chat actual si ha quedado bloqueada e inicia una sesión limpia.</li>
+          <li>Cambia el selector de modelo a la versión más ligera y rápida: <code>nvidia/nemotron-lighting-free</code>.</li>
+          <li>Usa el <strong>Prompt 4</strong> ordenando dividir la creación del archivo <code>index.html</code> en 4 pasos pequeños.</li>
+        </ol>
+      </div>
+
+      <div class="card card-warning">
+        <span class="badge badge-amber">Problema #2</span>
+        <h3>2. Desaparición o deshabilitación de modelos gratuitos en las listas públicas</h3>
+        <p><strong>Síntoma:</strong> Al buscar el modelo gratuito en el desplegable de OpenRouter o DeepSeek Harness, ya no aparece disponible temporalmente.</p>
+        <p><strong>Causa raíz:</strong> Los proveedores rotan o limitan temporalmente los nodos gratuitos según la capacidad de sus servidores.</p>
+        <p><strong>Solución paso a paso:</strong></p>
+        <ol style="padding-left:20px;">
+          <li>Alterna entre la familia <code>Nemotron 3 Ultra Free</code> y <code>Nemotron Lighting Free</code>.</li>
+          <li>Si buscas estabilidad continua sin cortes a bajo coste, valora las alternativas intermedias mencionadas en la guía: gama <strong>DeepSeek</strong> o modelos <strong>GLM 5.2 / 5.3</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="card card-danger">
+        <span class="badge badge-rose">Problema #3</span>
+        <h3>3. Bucle infinito de instalación de herramientas adicionales en tu sistema</h3>
+        <p><strong>Síntoma:</strong> El agente empieza a ejecutar comandos para descargar Node.js, frameworks pesados o decenas de librerías sin terminar nunca.</p>
+        <p><strong>Causa raíz:</strong> Por defecto, muchos agentes asumen una arquitectura empresarial multiproyecto en vez de un prototipo ligero.</p>
+        <p><strong>Solución paso a paso:</strong></p>
+        <ol style="padding-left:20px;">
+          <li>Pulsa el botón de parada en DeepSeek Harness inmediatamente.</li>
+          <li>Envía el <strong>Prompt 3</strong>: <em>"Para y hazlo más simple, una sola carpeta con un index.html."</em></li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <span class="badge badge-blue">Problema #4</span>
+        <h3>4. Errores de sintaxis al importar archivos CSV de diferentes entidades bancarias</h3>
+        <p><strong>Síntoma:</strong> Subes el archivo <code>.csv</code> de tu banco a la aplicación clonada y la tabla aparece vacía o con símbolos extraños.</p>
+        <p><strong>Causa raíz:</strong> Muchos bancos españoles y europeos exportan los archivos CSV separados por punto y coma (<code>;</code>) en lugar de coma (<code>,</code>), o usan codificación ANSI en vez de UTF-8.</p>
+        <p><strong>Solución paso a paso:</strong></p>
+        <ol style="padding-left:20px;">
+          <li>Pídele al agente que actualice la función JavaScript de lectura del CSV para detectar automáticamente tanto comas (<code>,</code>) como puntos y comas (<code>;</code>).</li>
+          <li>Solicita un mapeo flexible de cabeceras que reconozca nombres equivalentes como <em>"Fecha"</em>, <em>"F.Operación"</em> o <em>"Date"</em>.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <span class="badge badge-purple">Problema #5</span>
+        <h3>5. Discrepancias entre las categorías presupuestarias originales y las clonadas</h3>
+        <p><strong>Síntoma:</strong> Los movimientos importados en la versión gratuita aparecen listados como ingresos y gastos, pero no se asignan solos a los sobres de categorías.</p>
+        <p><strong>Causa raíz:</strong> En la versión generada con modelos gratuitos, el parseador CSV crea una lectura básica de importes sin reglas automáticas de categorización.</p>
+        <p><strong>Solución paso a paso:</strong></p>
+        <ol style="padding-left:20px;">
+          <li>Pide al agente en un paso adicional que añada un selector desplegable de categoría en cada fila de movimiento o un diccionario de palabras clave (por ejemplo, si el concepto contiene <em>"Supermercado"</em>, asignarlo al sobre <em>"Alimentación"</em>).</li>
+        </ol>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 7: RESUMEN Y GLOSARIO
+         ========================================== -->
+    <section class="tab-section" id="tab-7" data-t="RESUMEN">
+      <h2>Módulo 9: Resumen Ejecutivo por Capítulos y Glosario Técnico Completo</h2>
+
+      <div class="card card-highlight">
+        <h3>Resumen Ejecutivo de Ideas Clave</h3>
+        <ul style="padding-left:20px;">
+          <li><strong>Ingeniería inversa sin código fuente:</strong> Gracias al agente <strong>REA</strong> integrado en <strong>DeepSeek Harness</strong>, es posible inspeccionar aplicaciones web en ejecución como <em>Actual Budget</em> y extraer sus fórmulas JavaScript y vistas SQL reales.</li>
+          <li><strong>Arquitectura de archivo único (<code>index.html</code>):</strong> Para evitar instalaciones peligrosas o fallidas en tu ordenador, la regla de oro es exigir una sola carpeta con un único archivo autónomo <code>index.html</code>.</li>
+          <li><strong>Regla de los 4 pasos en modelos gratuitos:</strong> Al usar <code>Nvidia Nemotron Free</code> mediante <strong>OpenRouter</strong>, dividir el trabajo en 4 fases (HTML, CSS, JS y Pruebas) evita la saturación y los errores de <em>"Turno fallido"</em>.</li>
+          <li><strong>Modelos gratuitos vs. Modelos de pago:</strong> Los modelos gratuitos permiten lograr una aplicación funcional a coste cero; por su parte, <strong>Claude Code con Anthropic Opus 5 / 5.5</strong> ofrece mayor estabilidad y un acabado visual y funcional superior en menos tiempo.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Glosario Técnico Completo (A - Z)</h3>
+        <div class="grid-2">
+          <div class="step-box">
+            <h4>Actual Budget</h4>
+            <p>Aplicación de gestión de finanzas personales de código abierto utilizada como modelo de origen para el proceso de inspección y clonación.</p>
+          </div>
+          <div class="step-box">
+            <h4>API Key</h4>
+            <p>Clave de autenticación secreta necesaria para conectar herramientas de desarrollo como DeepSeek Harness con modelos de lenguaje alojados en la nube.</p>
+          </div>
+          <div class="step-box">
+            <h4>Claude Code</h4>
+            <p>Entorno de desarrollo avanzado basado en línea de comandos alimentado por modelos de Anthropic (Opus 5 / 5.5) para tareas de programación autónoma.</p>
+          </div>
+          <div class="step-box">
+            <h4>DeepSeek Harness (DS Harness)</h4>
+            <p>Entorno y plataforma para la ejecución de agentes autónomos, inspección de software e integración de modelos LLM.</p>
+          </div>
+          <div class="step-box">
+            <h4>Envelope Budgeting (Presupuesto por Sobres)</h4>
+            <p>Metodología financiera donde el dinero disponible de los ingresos se asigna en "sobres" o categorías específicas antes de ser gastado.</p>
+          </div>
+          <div class="step-box">
+            <h4>Index.html</h4>
+            <p>Documento principal de una aplicación web que agrupa la estructura HTML y, en arquitecturas simplificadas autónomas, también los estilos CSS y la lógica JavaScript.</p>
+          </div>
+          <div class="step-box">
+            <h4>Nemotron (Nvidia)</h4>
+            <p>Familia de modelos de lenguaje desarrollados por Nvidia (como <em>Nemotron 3 Ultra Free</em> y <em>Nemotron Lighting Free</em>), accesibles gratuitamente mediante OpenRouter.</p>
+          </div>
+          <div class="step-box">
+            <h4>OpenRouter</h4>
+            <p>Plataforma unificada que actúa como pasarela para acceder a múltiples API de modelos de inteligencia artificial gratuitos y de pago con una sola cuenta.</p>
+          </div>
+          <div class="step-box">
+            <h4>REA (Reverse Engineering Agent)</h4>
+            <p>Agente inteligente especializado en examinar y descompilar el comportamiento, las vistas SQL y la lógica interna de aplicaciones web activas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 8: FUENTES Y DOCUMENTACIÓN OFICIAL
+         ========================================== -->
+    <section class="tab-section" id="tab-8" data-t="FUENTES">
+      <h2>Módulo 12: Fuentes Fiables, Material de Origen y Enlaces Oficiales</h2>
+      <p>A continuación se documentan las fuentes utilizadas en el material de partida. Todos los enlaces URL cuentan con su botón para copiar la dirección y con el botón obligatorio <strong>"Abrir enlace en nueva ventana"</strong>.</p>
+
+      <div class="card card-highlight">
+        <span class="badge badge-blue">Fuente Principal Documentada</span>
+        <h3>Material Audiovisual de Origen</h3>
+        <p><strong>Vídeo de Referencia:</strong> <em>"DeepSeek Harness + REA - Clonación de Aplicaciones"</em> por <strong>Rodolfo Carrasco (Kerkus System)</strong>.</p>
+        <p class="text-muted">Este documento educativo organiza de forma pedagógica los procedimientos, prompts, pruebas con Actual Budget, uso de OpenRouter con Nvidia Nemotron y comparativa frente a Claude Code (Opus 5 / 5.5) expuestos en dicha fuente.</p>
+      </div>
+
+      <div class="card">
+        <h3>Enlaces a Plataformas y Documentación Oficial Citadas</h3>
+
+        <!-- URL 1: OPENROUTER -->
+        <div class="url-resource-card">
+          <div>
+            <strong>1. OpenRouter — Pasarela oficial para obtener API Keys de modelos LLM gratuitos y de pago</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Plataforma donde se genera la clave API para conectar los modelos <code>nvidia/nemotron-3-ultra-free</code> y <code>nvidia/nemotron-lighting-free</code>.</p>
+          </div>
+          <div class="url-code-text" id="url-text-1">https://openrouter.ai/</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="https://openrouter.ai/">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-1">📋 COPIAR URL</button>
+          </div>
+        </div>
+
+        <!-- URL 2: ACTUAL BUDGET -->
+        <div class="url-resource-card">
+          <div>
+            <strong>2. Actual Budget — Proyecto Open-Source de Finanzas Personales por Sobres</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Documentación oficial de la aplicación financiera utilizada como caso práctico para la inspección con el agente REA.</p>
+          </div>
+          <div class="url-code-text" id="url-text-2">https://actualbudget.org/</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="https://actualbudget.org/">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-2">📋 COPIAR URL</button>
+          </div>
+        </div>
+
+        <!-- URL 3: NVIDIA NEMOTRON -->
+        <div class="url-resource-card">
+          <div>
+            <strong>3. Nvidia Nemotron — Plataforma de Modelos de Lenguaje de Nvidia</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Información técnica sobre la familia de modelos Nvidia Nemotron empleados en la configuración gratuita del tutorial.</p>
+          </div>
+          <div class="url-code-text" id="url-text-3">https://developer.nvidia.com/nemotron</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="https://developer.nvidia.com/nemotron">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-3">📋 COPIAR URL</button>
+          </div>
+        </div>
+
+        <!-- URL 4: ANTHROPIC CLAUDE CODE -->
+        <div class="url-resource-card">
+          <div>
+            <strong>4. Anthropic Claude Code — Documentación Oficial del Agente de Código</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Guía oficial de la herramienta utilizada en la comparativa de pago junto con los modelos de la familia Anthropic Opus.</p>
+          </div>
+          <div class="url-code-text" id="url-text-4">https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-4">📋 COPIAR URL</button>
+          </div>
+        </div>
+
+        <!-- URL 5: DEEPSEEK PLATFORM -->
+        <div class="url-resource-card">
+          <div>
+            <strong>5. DeepSeek Platform — Portal Oficial y Documentación Técnica de Modelos DeepSeek</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Portal oficial del ecosistema DeepSeek citado dentro de las alternativas de modelos de programación.</p>
+          </div>
+          <div class="url-code-text" id="url-text-5">https://platform.deepseek.com/</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="https://platform.deepseek.com/">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-5">📋 COPIAR URL</button>
+          </div>
+        </div>
+
+        <!-- URL 6: ENTORNO LOCALHOST DEMO -->
+        <div class="url-resource-card">
+          <div>
+            <strong>6. Dirección Local de Referencia para Inspección con REA (Puerto Local 3000)</strong>
+            <p class="text-muted" style="margin-bottom:4px;">Dirección local estándar mencionada en el tutorial donde se ejecuta la instancia de prueba de Actual Budget.</p>
+          </div>
+          <div class="url-code-text" id="url-text-6">http://localhost:3000</div>
+          <div class="url-actions-row">
+            <button type="button" class="open-new-window-btn" data-open-url="http://localhost:3000">↗ Abrir enlace en nueva ventana</button>
+            <button type="button" class="copy-btn" data-copy-target="url-text-6">📋 COPIAR URL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+    <!-- ==========================================
+         PESTAÑA 9: CRÉDITOS (ORDEN OBLIGATORIO ESTRICTO)
+         ========================================== -->
+    <section class="tab-section" id="tab-9" data-t="CRÉDITOS">
+      <!-- 1. TÍTULO DE LA SECCIÓN -->
+      <h2>CRÉDITOS</h2>
+
+      <div class="card card-highlight" style="padding:16px;">
+        <!-- 2. SVG ANIMADO COMPARTIDO CON INICIO (APARECE EN LA PRIMERA PANTALLA TAMBIÉN EN MÓVILES) -->
+        <div class="svg-hero-wrapper" style="max-width:340px; margin-bottom:12px;" role="region" aria-label="Ilustración animada compartida en la sección de Créditos">
+          <div id="svg-mount-credits" class="svg-hero-mount" aria-label="Ilustración vectorial animada compartida con Inicio que representa la ingeniería inversa de Actual Budget mediante REA y DeepSeek Harness hacia un archivo index.html autónomo"></div>
+        </div>
+
+        <div class="svg-controls-bar" style="margin-bottom:10px;">
+          <button type="button" class="tool-btn svg-toggle-anim-btn" data-target="svg-mount-credits">⏸️ Pausar / Reanudar animación SVG</button>
+        </div>
+
+        <!-- 3. BREVE DESCRIPCIÓN DE LA ILUSTRACIÓN -->
+        <p class="text-muted" style="text-align:center; font-size:0.9rem; max-width:680px; margin:0 auto 12px;">
+          <strong>Descripción de la ilustración:</strong> Escena vectorial multicapa en formato vertical 4:5 que representa en la parte superior la aplicación <em>Actual Budget</em> con su motor reactivo de hoja de cálculo y vistas SQL; en el centro, el núcleo hexagonal del agente <em>REA</em> y <em>DeepSeek Harness</em> escaneando con un haz láser y extrayendo las reglas de negocio; y en la base, la síntesis en 4 pasos de la nueva aplicación financiera autónoma <em>MisCuentas IA</em> en un único archivo <code>index.html</code> con lectura de extractos bancarios CSV.
+        </p>
+
+        <!-- 4. NOMBRE DEL AUTOR (ELEMENTO VISUAL MÁS DESTACADO) -->
+        <div class="credits-author-hero">Rubén Sbarsky</div>
+
+        <!-- 5. TEXTO «Autor del tutorial» -->
+        <div class="credits-role-sub">Autor del tutorial</div>
+
+        <!-- 6. INFORMACIÓN ADICIONAL PERTINENTE -->
+        <div class="step-box" style="margin-top:14px;">
+          <h4>Información Técnica y Pedagógica del Entregable</h4>
+          <p>Tutorial interactivo de agencia premium diseñado bajo estándares de <strong>Clean Code (Robert C. Martin)</strong> y metodología de auditoría adversarial <strong>GAUNTLET V3</strong>. Optimizado especialmente para dispositivos móviles desde <code>360px</code> de ancho (incluyendo el <strong>Samsung Galaxy A02s</strong>) y preparado para impresión directa en formato A4 vertical.</p>
+          <p style="margin-bottom:4px;"><strong>Fecha y hora fija de creación y sincronización:</strong> <code>06/11/2026 — 12:54:44</code></p>
+        </div>
+
+        <!-- 7. NÚMERO DE VERSIÓN COINCIDENTE CON EL NOMBRE DEL ARCHIVO -->
+        <div style="text-align:center; margin-top:14px;">
+          <span class="badge badge-blue" style="font-size:0.95rem; padding:8px 18px;">Versión del entregable: V001 (tutorial_clonacion_apps_deepseek_rea_V001.html)</span>
+        </div>
+      </div>
+
+      <div class="tab-footer-nav"></div>
+    </section>
+
+  </main>
+
+  <!-- BOTONES FLOTANTES MOVIBLES (ARRASTRABLES CON DEDO O RATÓN) -->
+  <button type="button" id="fab-home" class="draggable-fab" title="Mantén pulsado para arrastrar o toca para ir a INICIO" aria-label="Botón flotante movible para ir a la pestaña de INICIO">🏠 INICIO</button>
+  <button type="button" id="fab-top" class="draggable-fab" title="Mantén pulsado para arrastrar o toca para subir al comienzo de la pestaña actual" aria-label="Botón flotante movible para subir al comienzo de la pestaña actual">⬆️ ARRIBA</button>
+
+  <!-- LÓGICA JAVASCRIPT LIMPIA (CLEAN CODE: FUNCIONES PEQUEÑAS, NOMBRES REVELADORES DE INTENCIÓN, SRP) -->
+  <script>
+    (function initializeTutorialApplication() {
+      'use strict';
+
+      const STORAGE_KEYS = {
+        ACTIVE_TAB: 'ds_rea_tutorial_active_tab_v001',
+        THEME: 'ds_rea_tutorial_theme_v001',
+        FONT_SCALE: 'ds_rea_tutorial_font_scale_v001',
+        CHECKLIST: 'ds_rea_tutorial_checklist_v001',
+        FAB_HOME_POS: 'ds_rea_tutorial_fab_home_pos_v001',
+        FAB_TOP_POS: 'ds_rea_tutorial_fab_top_pos_v001'
+      };
+
+      const secs = Array.from(document.querySelectorAll('.tab-section'));
+      const tabButtons = Array.from(document.querySelectorAll('[data-tab-btn]'));
+      const dr = document.querySelector('#dr');
+      const mb = document.querySelector('#mb');
+
+      let currentSectionIndex = 0;
+      let masterSvgMarkup = '';
+      let currentFontScale = 1;
+
+      /* =====================================================
+         1. GESTIÓN SEGURA DE LOCALSTORAGE
+         ===================================================== */
+      function readStorageValue(key, fallbackValue) {
+        try {
+          const rawValue = window.localStorage.getItem(key);
+          return rawValue !== null ? JSON.parse(rawValue) : fallbackValue;
+        } catch (storageError) {
+          return fallbackValue;
+        }
+      }
+
+      function writeStorageValue(key, valueToStore) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (storageError) {
+          /* Persistencia degradada silenciosamente si el navegador restringe localStorage */
+        }
+      }
+
+      /* =====================================================
+         2. PLANTILLA ÚNICA SVG Y MONTAJE CON IDs ÚNICOS
+         ===================================================== */
+      function extractAndRemoveHiddenSvgSource() {
+        const holder = document.getElementById('svg-master-template-holder');
+        if (!holder) {
+          return;
+        }
+        masterSvgMarkup = holder.innerHTML.trim();
+        holder.remove();
+      }
+
+      function buildUniqueSvgMarkup(instancePrefix) {
+        return masterSvgMarkup.replace(/__PREFIX__/g, instancePrefix);
+      }
+
+      function renderDataUriFallbackIfNeeded(mountContainer, svgString) {
+        if (mountContainer.querySelector('svg')) {
+          return;
+        }
+        const fallbackImg = document.createElement('img');
+        fallbackImg.alt = mountContainer.getAttribute('aria-label') || 'Ilustración del tutorial';
+        fallbackImg.style.width = '100%';
+        fallbackImg.style.height = '100%';
+        fallbackImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgString);
+        mountContainer.appendChild(fallbackImg);
+      }
+
+      function mountSvgInstance(containerId, uniquePrefix) {
+        const mountContainer = document.getElementById(containerId);
+        if (!mountContainer || !masterSvgMarkup) {
+          return;
+        }
+        const uniqueSvgString = buildUniqueSvgMarkup(uniquePrefix);
+        mountContainer.innerHTML = uniqueSvgString;
+        renderDataUriFallbackIfNeeded(mountContainer, uniqueSvgString);
+      }
+
+      function ensureVisibleSvgMounted() {
+        if (currentSectionIndex === 0) {
+          const homeMount = document.getElementById('svg-mount-home');
+          if (homeMount && homeMount.children.length === 0) {
+            mountSvgInstance('svg-mount-home', 'home_svg_');
+          }
+        }
+        if (currentSectionIndex === 9) {
+          const creditsMount = document.getElementById('svg-mount-credits');
+          if (creditsMount && creditsMount.children.length === 0) {
+            mountSvgInstance('svg-mount-credits', 'credits_svg_');
+          }
+        }
+      }
+
+      function mountAllSvgInstances() {
+        mountSvgInstance('svg-mount-home', 'home_svg_');
+        mountSvgInstance('svg-mount-credits', 'credits_svg_');
+      }
+
+      function setupSvgPauseToggleButtons() {
+        const toggleButtons = document.querySelectorAll('.svg-toggle-anim-btn');
+        toggleButtons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const container = document.getElementById(targetId);
+            if (!container) {
+              return;
+            }
+            const isPaused = container.classList.toggle('svg-paused');
+            btn.textContent = isPaused ? '▶️ Reanudar animación SVG' : '⏸️ Pausar / Reanudar animación SVG';
+          });
+        });
+      }
+
+      /* =====================================================
+         3. NAVEGACIÓN SPA, ÍNDICE LATERAL (#dr) Y PIES DE PESTAÑA
+         ===================================================== */
+      const tg = (forceState) => {
+        dr.classList.toggle('o', forceState);
+        mb.setAttribute('aria-expanded', dr.classList.contains('o'));
+      };
+
+      function scrollToCurrentTabTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function updateReadingProgressBar() {
+        const progressBar = document.getElementById('reading-progress-bar');
+        if (!progressBar) {
+          return;
+        }
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrollPercent = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0;
+        progressBar.style.width = scrollPercent + '%';
+      }
+
+      function go(targetIndex) {
+        const safeIndex = Math.max(0, Math.min(secs.length - 1, Number(targetIndex) || 0));
+        currentSectionIndex = safeIndex;
+
+        secs.forEach((section, idx) => {
+          section.classList.toggle('active', idx === safeIndex);
+        });
+
+        tabButtons.forEach((btn, idx) => {
+          const isActive = idx === safeIndex;
+          btn.classList.toggle('active', isActive);
+          if (isActive) {
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+        });
+
+        [...dr.children].forEach((anchor, idx) => {
+          anchor.classList.toggle('on', idx === safeIndex);
+        });
+
+        if (safeIndex === 0) {
+          mountSvgInstance('svg-mount-home', 'home_svg_');
+        } else if (safeIndex === 9) {
+          mountSvgInstance('svg-mount-credits', 'credits_svg_');
+        }
+
+        writeStorageValue(STORAGE_KEYS.ACTIVE_TAB, safeIndex);
+        scrollToCurrentTabTop();
+        updateReadingProgressBar();
+      }
+
+      function buildSideDrawerIndex() {
+        secs.forEach((section, index) => {
+          const anchor = document.createElement('a');
+          const sectionTitle = section.dataset.t || section.querySelector('h2').textContent;
+          anchor.textContent = (index ? index + '. ' : '') + sectionTitle;
+          anchor.setAttribute('tabindex', '0');
+          anchor.onclick = () => {
+            go(index);
+            tg(false);
+          };
+          anchor.onkeydown = (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              go(index);
+              tg(false);
+            }
+          };
+          dr.appendChild(anchor);
+        });
+
+        mb.onclick = () => tg();
+
+        const homeIndexBtn = document.querySelector('#ix');
+        if (homeIndexBtn) {
+          homeIndexBtn.onclick = () => tg(true);
+        }
+
+        window.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            tg(false);
+          }
+        });
+
+        document.addEventListener('click', (event) => {
+          if (!event.target.closest('#dr,#mb,#ix')) {
+            tg(false);
+          }
+        });
+      }
+
+      function buildBottomPaginationButtons() {
+        secs.forEach((section, index) => {
+          const footerContainer = section.querySelector('.tab-footer-nav');
+          if (!footerContainer) {
+            return;
+          }
+          footerContainer.innerHTML = '';
+
+          if (index > 0) {
+            const prevTitle = secs[index - 1].dataset.t || 'Anterior';
+            const prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = 'nav-step-btn';
+            prevBtn.innerHTML = '⬅️ Anterior: ' + prevTitle;
+            prevBtn.addEventListener('click', () => go(index - 1));
+            footerContainer.appendChild(prevBtn);
+          }
+
+          if (index < secs.length - 1) {
+            const nextTitle = secs[index + 1].dataset.t || 'Siguiente';
+            const nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = 'nav-step-btn';
+            nextBtn.innerHTML = 'Siguiente: ' + nextTitle + ' ➡️';
+            nextBtn.addEventListener('click', () => go(index + 1));
+            footerContainer.appendChild(nextBtn);
+          }
+        });
+      }
+
+      function setupTopBarAndKeyboardNavigation() {
+        tabButtons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const targetIdx = Number(btn.getAttribute('data-tab-btn'));
+            go(targetIdx);
+          });
+        });
+
+        window.addEventListener('keydown', (event) => {
+          const activeTag = document.activeElement ? document.activeElement.tagName : '';
+          if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+            return;
+          }
+          if (event.key === 'ArrowRight' && currentSectionIndex < secs.length - 1) {
+            go(currentSectionIndex + 1);
+          } else if (event.key === 'ArrowLeft' && currentSectionIndex > 0) {
+            go(currentSectionIndex - 1);
+          }
+        });
+      }
+
+      /* =====================================================
+         4. BOTONES FLOTANTES MOVIBLES (INICIO Y ARRIBA)
+         ===================================================== */
+      function makeFloatingButtonDraggable(buttonElement, storageKey, onTapCallback) {
+        if (!buttonElement) {
+          return;
+        }
+
+        const savedPosition = readStorageValue(storageKey, null);
+        if (savedPosition && typeof savedPosition.left === 'number' && typeof savedPosition.top === 'number') {
+          const clampedLeft = Math.max(6, Math.min(window.innerWidth - 95, savedPosition.left));
+          const clampedTop = Math.max(64, Math.min(window.innerHeight - 54, savedPosition.top));
+          buttonElement.style.left = clampedLeft + 'px';
+          buttonElement.style.top = clampedTop + 'px';
+          buttonElement.style.right = 'auto';
+          buttonElement.style.bottom = 'auto';
+        }
+
+        let isDragging = false;
+        let hasMovedSignificantly = false;
+        let startPointerX = 0;
+        let startPointerY = 0;
+        let initialElemLeft = 0;
+        let initialElemTop = 0;
+
+        buttonElement.addEventListener('pointerdown', (event) => {
+          isDragging = true;
+          hasMovedSignificantly = false;
+          startPointerX = event.clientX;
+          startPointerY = event.clientY;
+          const rect = buttonElement.getBoundingClientRect();
+          initialElemLeft = rect.left;
+          initialElemTop = rect.top;
+          buttonElement.setPointerCapture(event.pointerId);
+        });
+
+        buttonElement.addEventListener('pointermove', (event) => {
+          if (!isDragging) {
+            return;
+          }
+          const deltaX = event.clientX - startPointerX;
+          const deltaY = event.clientY - startPointerY;
+          if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+            hasMovedSignificantly = true;
+          }
+          if (!hasMovedSignificantly) {
+            return;
+          }
+          const maxLeft = window.innerWidth - buttonElement.offsetWidth - 6;
+          const maxTop = window.innerHeight - buttonElement.offsetHeight - 6;
+          const newLeft = Math.max(6, Math.min(maxLeft, initialElemLeft + deltaX));
+          const newTop = Math.max(62, Math.min(maxTop, initialElemTop + deltaY));
+
+          buttonElement.style.left = newLeft + 'px';
+          buttonElement.style.top = newTop + 'px';
+          buttonElement.style.right = 'auto';
+          buttonElement.style.bottom = 'auto';
+        });
+
+        buttonElement.addEventListener('pointerup', (event) => {
+          if (!isDragging) {
+            return;
+          }
+          isDragging = false;
+          buttonElement.releasePointerCapture(event.pointerId);
+
+          if (hasMovedSignificantly) {
+            const finalRect = buttonElement.getBoundingClientRect();
+            writeStorageValue(storageKey, { left: finalRect.left, top: finalRect.top });
+          } else {
+            onTapCallback();
+          }
+        });
+      }
+
+      /* =====================================================
+         5. BOTONES COPIAR Y APERTURA DE URL EN NUEVA VENTANA
+         ===================================================== */
+      function fallbackCopyTextToClipboard(textToCopy) {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        let copySucceeded = false;
+        try {
+          copySucceeded = document.execCommand('copy');
+        } catch (err) {
+          copySucceeded = false;
+        }
+        document.body.removeChild(textArea);
+        return copySucceeded;
+      }
+
+      function setupCopyButtons() {
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        copyButtons.forEach((button) => {
+          button.addEventListener('click', async () => {
+            const targetId = button.getAttribute('data-copy-target');
+            const targetElement = document.getElementById(targetId);
+            if (!targetElement) {
+              return;
+            }
+            const exactText = targetElement.textContent;
+            const originalLabel = button.innerHTML;
+            let copiedOk = false;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              try {
+                await navigator.clipboard.writeText(exactText);
+                copiedOk = true;
+              } catch (clipboardErr) {
+                copiedOk = fallbackCopyTextToClipboard(exactText);
+              }
+            } else {
+              copiedOk = fallbackCopyTextToClipboard(exactText);
+            }
+
+            if (copiedOk) {
+              button.classList.add('copied');
+              button.innerHTML = '✅ ¡COPIADO!';
+            } else {
+              window.prompt('Copia manualmente el texto seleccionado con Ctrl+C:', exactText);
+            }
+
+            window.setTimeout(() => {
+              button.classList.remove('copied');
+              button.innerHTML = originalLabel;
+            }, 2000);
+          });
+        });
+      }
+
+      function setupOpenUrlInNewWindowButtons() {
+        const urlButtons = document.querySelectorAll('.open-new-window-btn');
+        urlButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const targetUrl = button.getAttribute('data-open-url');
+            if (!targetUrl) {
+              return;
+            }
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          });
+        });
+      }
+
+      /* =====================================================
+         6. SIMULADOR INTERACTIVO DE PRESUPUESTO POR SOBRES
+         ===================================================== */
+      function setupEnvelopeBudgetSimulator() {
+        const incomeInput = document.getElementById('sim-income-input');
+        const housingInput = document.getElementById('sim-env-housing');
+        const foodInput = document.getElementById('sim-env-food');
+        const savingsInput = document.getElementById('sim-env-savings');
+
+        const outIncome = document.getElementById('sim-out-income');
+        const outAssigned = document.getElementById('sim-out-assigned');
+        const outToBudget = document.getElementById('sim-out-tobudget');
+        const statusMsg = document.getElementById('sim-status-msg');
+
+        if (!incomeInput || !housingInput || !foodInput || !savingsInput) {
+          return;
+        }
+
+        const formatEuro = (amount) => {
+          return amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        };
+
+        const recalculateBudget = () => {
+          const income = Number(incomeInput.value) || 0;
+          const assigned = (Number(housingInput.value) || 0) + (Number(foodInput.value) || 0) + (Number(savingsInput.value) || 0);
+          const pendingToAssign = income - assigned;
+
+          outIncome.textContent = formatEuro(income);
+          outAssigned.textContent = formatEuro(assigned);
+          outToBudget.textContent = formatEuro(pendingToAssign);
+
+          if (pendingToAssign > 0) {
+            outToBudget.style.color = 'var(--accent-amber)';
+            statusMsg.style.color = 'var(--accent-amber)';
+            statusMsg.textContent = '💡 Tienes ' + formatEuro(pendingToAssign) + ' pendientes de asignar a tus sobres.';
+          } else if (pendingToAssign === 0) {
+            outToBudget.style.color = 'var(--accent-emerald)';
+            statusMsg.style.color = 'var(--accent-emerald)';
+            statusMsg.textContent = '✅ ¡Presupuesto perfecto de base cero! Todo tu dinero está asignado.';
+          } else {
+            outToBudget.style.color = 'var(--accent-rose)';
+            statusMsg.style.color = 'var(--accent-rose)';
+            statusMsg.textContent = '⚠️ Has asignado ' + formatEuro(Math.abs(pendingToAssign)) + ' más de lo que ingresaste.';
+          }
+        };
+
+        [incomeInput, housingInput, foodInput, savingsInput].forEach((input) => {
+          input.addEventListener('input', recalculateBudget);
+        });
+
+        recalculateBudget();
+      }
+
+      /* =====================================================
+         7. CHECKLIST PERSISTENTE Y CONTROLES DE 33 PREGUNTAS
+         ===================================================== */
+      function setupChecklistPersistence() {
+        const checkboxes = Array.from(document.querySelectorAll('#interactive-checklist input[type="checkbox"]'));
+        const savedChecklistState = readStorageValue(STORAGE_KEYS.CHECKLIST, {});
+
+        checkboxes.forEach((checkbox) => {
+          const checkId = checkbox.getAttribute('data-check-id');
+          const isChecked = Boolean(savedChecklistState[checkId]);
+          checkbox.checked = isChecked;
+          checkbox.closest('.checklist-item').classList.toggle('completed', isChecked);
+
+          checkbox.addEventListener('change', () => {
+            savedChecklistState[checkId] = checkbox.checked;
+            checkbox.closest('.checklist-item').classList.toggle('completed', checkbox.checked);
+            writeStorageValue(STORAGE_KEYS.CHECKLIST, savedChecklistState);
+          });
+        });
+
+        const resetBtn = document.getElementById('reset-checklist-btn');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            checkboxes.forEach((checkbox) => {
+              checkbox.checked = false;
+              checkbox.closest('.checklist-item').classList.remove('completed');
+            });
+            writeStorageValue(STORAGE_KEYS.CHECKLIST, {});
+          });
+        }
+      }
+
+      function setupQaAccordionControls() {
+        const expandAllBtn = document.getElementById('qa-expand-all-btn');
+        const collapseAllBtn = document.getElementById('qa-collapse-all-btn');
+        const qaDetailsList = Array.from(document.querySelectorAll('#tab-5 details.qa-card'));
+
+        if (expandAllBtn) {
+          expandAllBtn.addEventListener('click', () => {
+            qaDetailsList.forEach((det) => { det.open = true; });
+          });
+        }
+        if (collapseAllBtn) {
+          collapseAllBtn.addEventListener('click', () => {
+            qaDetailsList.forEach((det) => { det.open = false; });
+          });
+        }
+      }
+
+      /* =====================================================
+         8. BUSCADOR INTERNO, TEMA Y TAMAÑO DE FUENTE
+         ===================================================== */
+      function setupGlobalSearch() {
+        const searchInput = document.getElementById('global-search-input');
+        const clearBtn = document.getElementById('clear-search-btn');
+        const resultsPanel = document.getElementById('search-results-panel');
+        const resultsList = document.getElementById('search-results-list');
+        const resultsCount = document.getElementById('search-results-count');
+        const closePanelBtn = document.getElementById('close-search-panel-btn');
+
+        const closeSearch = () => {
+          resultsPanel.classList.remove('visible');
+          resultsList.innerHTML = '';
+        };
+
+        searchInput.addEventListener('input', () => {
+          const query = searchInput.value.trim().toLowerCase();
+          if (query.length < 2) {
+            closeSearch();
+            return;
+          }
+
+          resultsList.innerHTML = '';
+          let matchesFound = 0;
+
+          secs.forEach((section, secIndex) => {
+            const sectionTitle = section.dataset.t || 'Sección';
+            const textContent = section.textContent || '';
+            const matchPosition = textContent.toLowerCase().indexOf(query);
+
+            if (matchPosition !== -1) {
+              matchesFound += 1;
+              const snippetStart = Math.max(0, matchPosition - 45);
+              const snippetEnd = Math.min(textContent.length, matchPosition + 95);
+              const cleanSnippet = textContent.slice(snippetStart, snippetEnd).replace(/\s+/g, ' ').trim();
+
+              const hitElement = document.createElement('div');
+              hitElement.className = 'search-hit-item';
+              hitElement.innerHTML = '<strong style="color:var(--accent);">[' + sectionTitle + ']</strong> — ...' + cleanSnippet + '...';
+              hitElement.addEventListener('click', () => {
+                go(secIndex);
+                closeSearch();
+              });
+              resultsList.appendChild(hitElement);
+            }
+          });
+
+          resultsCount.textContent = matchesFound + ' pestaña(s) contienen "' + searchInput.value.trim() + '"';
+          resultsPanel.classList.add('visible');
+        });
+
+        clearBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          closeSearch();
+        });
+
+        closePanelBtn.addEventListener('click', closeSearch);
+      }
+
+      function setupThemeAndFontControls() {
+        const savedTheme = readStorageValue(STORAGE_KEYS.THEME, 'dark');
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        currentFontScale = Number(readStorageValue(STORAGE_KEYS.FONT_SCALE, 1)) || 1;
+        document.documentElement.style.setProperty('--font-scale', String(currentFontScale));
+
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const fontDecBtn = document.getElementById('font-dec-btn');
+        const fontIncBtn = document.getElementById('font-inc-btn');
+
+        themeToggleBtn.addEventListener('click', () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', nextTheme);
+          writeStorageValue(STORAGE_KEYS.THEME, nextTheme);
+        });
+
+        fontDecBtn.addEventListener('click', () => {
+          currentFontScale = Math.max(0.85, Number((currentFontScale - 0.08).toFixed(2)));
+          document.documentElement.style.setProperty('--font-scale', String(currentFontScale));
+          writeStorageValue(STORAGE_KEYS.FONT_SCALE, currentFontScale);
+        });
+
+        fontIncBtn.addEventListener('click', () => {
+          currentFontScale = Math.min(1.3, Number((currentFontScale + 0.08).toFixed(2)));
+          document.documentElement.style.setProperty('--font-scale', String(currentFontScale));
+          writeStorageValue(STORAGE_KEYS.FONT_SCALE, currentFontScale);
+        });
+      }
+
+      /* =====================================================
+         9. IMPRESIÓN Y GUARDADO COMO PDF A4
+         ===================================================== */
+      function setupPrintAndPdfSystem() {
+        let closedDetailsBeforePrint = [];
+
+        const prepareDomBeforePrint = () => {
+          mountAllSvgInstances();
+          const allDetails = Array.from(document.querySelectorAll('details'));
+          closedDetailsBeforePrint = allDetails.filter((det) => !det.open);
+          closedDetailsBeforePrint.forEach((det) => {
+            det.open = true;
+          });
+        };
+
+        const restoreDomAfterPrint = () => {
+          closedDetailsBeforePrint.forEach((det) => {
+            det.open = false;
+          });
+          closedDetailsBeforePrint = [];
+        };
+
+        window.addEventListener('beforeprint', prepareDomBeforePrint);
+        window.addEventListener('afterprint', restoreDomAfterPrint);
+
+        const printBtn = document.getElementById('print-pdf-btn');
+        const fallbackBanner = document.getElementById('print-fallback-banner');
+
+        printBtn.addEventListener('click', () => {
+          prepareDomBeforePrint();
+          try {
+            window.print();
+          } catch (printError) {
+            if (fallbackBanner) {
+              fallbackBanner.style.display = 'block';
+            }
+          } finally {
+            window.setTimeout(restoreDomAfterPrint, 1200);
+          }
+        });
+      }
+
+      /* =====================================================
+         10. INICIALIZACIÓN MAESTRA Y COMPROBACIÓN PERIÓDICA SVG
+         ===================================================== */
+      extractAndRemoveHiddenSvgSource();
+      buildSideDrawerIndex();
+      buildBottomPaginationButtons();
+      setupTopBarAndKeyboardNavigation();
+      setupSvgPauseToggleButtons();
+      setupCopyButtons();
+      setupOpenUrlInNewWindowButtons();
+      setupEnvelopeBudgetSimulator();
+      setupChecklistPersistence();
+      setupQaAccordionControls();
+      setupGlobalSearch();
+      setupThemeAndFontControls();
+      setupPrintAndPdfSystem();
+
+      const fabHome = document.getElementById('fab-home');
+      const fabTop = document.getElementById('fab-top');
+      makeFloatingButtonDraggable(fabHome, STORAGE_KEYS.FAB_HOME_POS, () => go(0));
+      makeFloatingButtonDraggable(fabTop, STORAGE_KEYS.FAB_TOP_POS, () => scrollToCurrentTabTop());
+
+      const initialSavedTab = readStorageValue(STORAGE_KEYS.ACTIVE_TAB, 0);
+      go(initialSavedTab);
+
+      window.addEventListener('scroll', updateReadingProgressBar, { passive: true });
+      window.setInterval(ensureVisibleSvgMounted, 2500);
+    })();
+  </script>
+</body>
+</html>
